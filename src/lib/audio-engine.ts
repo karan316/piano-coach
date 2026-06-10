@@ -1,4 +1,6 @@
-// Web Audio API synthesizer with two modes: Grand Piano and Electric Piano
+// Web Audio API synthesizer with two modes:
+// - Grand Piano: sample-based playback from recorded .ogg files
+// - Electric Piano: rich multi-harmonic synthesis with inharmonicity + body resonance
 
 import { noteFrequency } from './notes'
 
@@ -7,6 +9,7 @@ export type PianoMode = 'grand' | 'electric'
 const STORAGE_KEY = 'piano-coach-sound-mode'
 
 interface ActiveNote {
+  source?: AudioBufferSourceNode
   oscillators: OscillatorNode[]
   gain: GainNode
   extras: AudioNode[] // filters, extra gain nodes to disconnect on cleanup
@@ -17,6 +20,10 @@ class AudioEngine {
   private masterGain: GainNode | null = null
   private activeOscillators = new Map<number, ActiveNote>()
   private _mode: PianoMode = 'grand'
+
+  // Sample buffer cache: MIDI note → decoded AudioBuffer
+  private sampleCache = new Map<number, AudioBuffer>()
+  private loadingPromises = new Map<number, Promise<AudioBuffer | null>>()
 
   constructor() {
     if (typeof localStorage !== 'undefined') {
@@ -54,75 +61,196 @@ class AudioEngine {
     return this.masterGain!
   }
 
-  // ─── Grand Piano Synthesis ───────────────────────────────────────
+  // ─── Sample File Mapping ─────────────────────────────────────────
+
+  /**
+   * Convert MIDI note number to sample filename.
+   * Files are named: C4.ogg, Csharp4.ogg, D4.ogg, etc.
+   * MIDI 21 = A0, MIDI 108 = C8
+   */
+  private static midiToSampleFilename(midi: number): string {
+    const noteNames = ['C', 'Csharp', 'D', 'Dsharp', 'E', 'F', 'Fsharp', 'G', 'Gsharp', 'A', 'Asharp', 'B']
+    const octave = Math.floor(midi / 12) - 1
+    const noteIndex = midi % 12
+    return `${noteNames[noteIndex]}${octave}.ogg`
+  }
+
+  /** Load and decode a sample for a MIDI note, with caching */
+  private async loadSample(midi: number): Promise<AudioBuffer | null> {
+    // Return cached
+    const cached = this.sampleCache.get(midi)
+    if (cached) return cached
+
+    // Return in-flight promise if already loading
+    const existing = this.loadingPromises.get(midi)
+    if (existing) return existing
+
+    const filename = AudioEngine.midiToSampleFilename(midi)
+    const url = `/audio/${filename}`
+
+    const promise = (async () => {
+      try {
+        const response = await fetch(url)
+        if (!response.ok) return null
+        const arrayBuffer = await response.arrayBuffer()
+        const ctx = this.ensureContext()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        this.sampleCache.set(midi, audioBuffer)
+        return audioBuffer
+      } catch {
+        console.warn(`Failed to load sample: ${filename}`)
+        return null
+      } finally {
+        this.loadingPromises.delete(midi)
+      }
+    })()
+
+    this.loadingPromises.set(midi, promise)
+    return promise
+  }
+
+  /** Preload samples for a range of notes (call during init for responsiveness) */
+  async preloadSamples(startMidi: number, endMidi: number): Promise<void> {
+    const promises: Promise<AudioBuffer | null>[] = []
+    for (let midi = startMidi; midi <= endMidi; midi++) {
+      if (midi >= 21 && midi <= 108) {
+        promises.push(this.loadSample(midi))
+      }
+    }
+    await Promise.all(promises)
+  }
+
+  // ─── Grand Piano (Sample-Based) ─────────────────────────────────
+
+  private startGrandSample(midi: number, buffer: AudioBuffer, fixedDuration?: number): ActiveNote {
+    const ctx = this.ensureContext()
+    const master = this.getMasterGain()
+    const now = ctx.currentTime
+
+    // Create buffer source
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+
+    // Gain envelope for the sample
+    const noteGain = ctx.createGain()
+    noteGain.gain.setValueAtTime(1.0, now)
+
+    if (fixedDuration) {
+      // For fixed duration, fade out near the end
+      const fadeStart = Math.max(0, fixedDuration - 0.3)
+      noteGain.gain.setValueAtTime(1.0, now + fadeStart)
+      noteGain.gain.linearRampToValueAtTime(0, now + fixedDuration)
+    }
+    // For sustained notes (no fixedDuration), gain stays at 1.0 until releaseNote is called
+
+    source.connect(noteGain)
+    noteGain.connect(master)
+
+    source.start(now)
+    if (fixedDuration) {
+      source.stop(now + fixedDuration + 0.1)
+    }
+
+    const active: ActiveNote = { source, oscillators: [], gain: noteGain, extras: [] }
+    this.activeOscillators.set(midi, active)
+
+    // Auto-cleanup for fixed duration or when sample ends naturally
+    source.onended = () => {
+      this.cleanupNote(midi)
+    }
+
+    return active
+  }
+
+  /** Start a grand piano note — loads sample, falls back to electric synth if unavailable */
+  private async startGrandNoteAsync(midi: number, fixedDuration?: number): Promise<void> {
+    const buffer = await this.loadSample(midi)
+    if (buffer) {
+      // Check that a newer note hasn't already replaced us while we were loading
+      if (!this.activeOscillators.has(midi)) {
+        this.startGrandSample(midi, buffer, fixedDuration)
+      }
+    } else {
+      // Fallback to electric synth if sample not available
+      if (!this.activeOscillators.has(midi)) {
+        this.startElectricNote(midi, fixedDuration)
+      }
+    }
+  }
+
+  /** Start grand note synchronously if cached, otherwise async-load */
+  private startGrandNote(midi: number, fixedDuration?: number): void {
+    const cached = this.sampleCache.get(midi)
+    if (cached) {
+      this.startGrandSample(midi, cached, fixedDuration)
+    } else {
+      // Play electric synth immediately as a placeholder while loading
+      this.startElectricNote(midi, fixedDuration)
+      // Load in background — next time it will be instant
+      void this.loadSample(midi)
+    }
+  }
+
+  // ─── Electric Piano (Rich Synthesis) ─────────────────────────────
   //
-  // Simulates a real grand piano with:
-  // - 8 harmonics with realistic amplitude + per-harmonic decay rates
-  // - 2-3 detuned oscillators per harmonic (simulating triple-strung piano strings)
+  // Multi-harmonic synthesis with:
+  // - 8 harmonics with per-harmonic decay rates
+  // - 2-3 detuned oscillators per harmonic (multi-string simulation)
   // - Inharmonic stretching (piano string stiffness)
   // - Hammer strike transient (filtered noise burst)
-  // - Soundboard body resonance (peaking EQ filter)
+  // - Soundboard body resonance (peaking EQ filters)
   // - Dynamic lowpass filter that closes over time
-  // - Long sustain with "pedal held" feel (~8-15 seconds of decay)
-  // - Double-decay envelope (fast initial drop, then long slow tail)
+  // - Long sustain with double-decay envelope
 
-  /** Harmonic partials with individual decay multipliers */
-  private static readonly GRAND_HARMONICS = [
-    { ratio: 1, amp: 1.0, decay: 1.0 },     // fundamental — sustains longest
-    { ratio: 2, amp: 0.65, decay: 0.85 },    // octave
-    { ratio: 3, amp: 0.35, decay: 0.7 },     // 12th
-    { ratio: 4, amp: 0.22, decay: 0.6 },     // double octave
-    { ratio: 5, amp: 0.12, decay: 0.5 },     // major 3rd + 2 octaves
-    { ratio: 6, amp: 0.08, decay: 0.4 },     // 5th + 2 octaves
-    { ratio: 7, amp: 0.04, decay: 0.3 },     // minor 7th (adds color)
-    { ratio: 8, amp: 0.025, decay: 0.25 },   // triple octave
+  private static readonly SYNTH_HARMONICS = [
+    { ratio: 1, amp: 1.0, decay: 1.0 },
+    { ratio: 2, amp: 0.65, decay: 0.85 },
+    { ratio: 3, amp: 0.35, decay: 0.7 },
+    { ratio: 4, amp: 0.22, decay: 0.6 },
+    { ratio: 5, amp: 0.12, decay: 0.5 },
+    { ratio: 6, amp: 0.08, decay: 0.4 },
+    { ratio: 7, amp: 0.04, decay: 0.3 },
+    { ratio: 8, amp: 0.025, decay: 0.25 },
   ]
 
-  /** Piano string inharmonicity: higher partials stretched sharp */
   private static inharmonicFreq(baseFreq: number, harmonicNumber: number): number {
-    // B varies by register — bass strings have higher inharmonicity
     const B = baseFreq < 200 ? 0.0006 : baseFreq < 500 ? 0.0004 : 0.0002
     return baseFreq * harmonicNumber * Math.sqrt(1 + B * harmonicNumber * harmonicNumber)
   }
 
-  /** Number of "strings" per note (real pianos: 1 for bass, 2 for tenor, 3 for treble) */
   private static stringsPerNote(midi: number): number {
     if (midi < 40) return 1
     if (midi < 52) return 2
     return 3
   }
 
-  private startGrandNote(midi: number, fixedDuration?: number): ActiveNote {
+  private startElectricNote(midi: number, fixedDuration?: number): ActiveNote {
     const ctx = this.ensureContext()
     const master = this.getMasterGain()
     const freq = noteFrequency(midi)
     const now = ctx.currentTime
     const numStrings = AudioEngine.stringsPerNote(midi)
 
-    // Higher notes decay faster; bass notes ring much longer
     const decayScale = Math.max(0.35, 1.2 - (midi - 30) / 75)
-    // Full sustain time in seconds (simulating pedal held down)
     const sustainTime = fixedDuration ?? (10.0 * decayScale)
 
-    // ─ Output chain: oscillators → noteGain → bodyResonance → filter → master
     const noteGain = ctx.createGain()
     noteGain.gain.setValueAtTime(0, now)
 
-    // Body resonance: a peaking EQ around the soundboard's resonant frequency
+    // Body resonance filters
     const bodyResonance = ctx.createBiquadFilter()
     bodyResonance.type = 'peaking'
-    bodyResonance.frequency.value = 250 // soundboard fundamental ~250Hz
+    bodyResonance.frequency.value = 250
     bodyResonance.Q.value = 2
     bodyResonance.gain.value = 3
 
-    // Second body resonance at higher frequency for brightness
     const bodyResonance2 = ctx.createBiquadFilter()
     bodyResonance2.type = 'peaking'
     bodyResonance2.frequency.value = 1200
     bodyResonance2.Q.value = 1.5
     bodyResonance2.gain.value = 2
 
-    // Lowpass filter: starts very bright, slowly closes (string energy loss)
+    // Dynamic lowpass filter
     const filter = ctx.createBiquadFilter()
     filter.type = 'lowpass'
     const cutoffStart = Math.min(freq * 16, 16000)
@@ -138,62 +266,47 @@ class AudioEngine {
     bodyResonance2.connect(filter)
     filter.connect(master)
 
-    // ─ Double-decay envelope (characteristic of real pianos)
-    // Phase 1: Fast attack → quick drop to ~45% (the "prompt" sound)
-    // Phase 2: Very slow exponential decay (the "sustain" / ring-out)
+    // Double-decay envelope
     const peakGain = 0.45
     const promptLevel = peakGain * 0.45
     const sustainLevel = peakGain * 0.15
     const tailLevel = 0.005
 
-    noteGain.gain.linearRampToValueAtTime(peakGain, now + 0.003) // 3ms attack
-    noteGain.gain.exponentialRampToValueAtTime(promptLevel, now + 0.06) // fast initial drop
-    noteGain.gain.exponentialRampToValueAtTime(sustainLevel, now + 2.0 * decayScale) // slow sustain
-    noteGain.gain.exponentialRampToValueAtTime(tailLevel, now + sustainTime) // very long tail
+    noteGain.gain.linearRampToValueAtTime(peakGain, now + 0.003)
+    noteGain.gain.exponentialRampToValueAtTime(promptLevel, now + 0.06)
+    noteGain.gain.exponentialRampToValueAtTime(sustainLevel, now + 2.0 * decayScale)
+    noteGain.gain.exponentialRampToValueAtTime(tailLevel, now + sustainTime)
 
     if (fixedDuration) {
       noteGain.gain.linearRampToValueAtTime(0, now + fixedDuration + 0.1)
     }
 
-    // ─ Harmonic oscillators with per-string detuning
+    // Harmonic oscillators with per-string detuning
     const oscillators: OscillatorNode[] = []
     const extras: AudioNode[] = [filter, bodyResonance, bodyResonance2]
 
-    for (const h of AudioEngine.GRAND_HARMONICS) {
+    for (const h of AudioEngine.SYNTH_HARMONICS) {
       const harmonicFreq = AudioEngine.inharmonicFreq(freq, h.ratio)
       if (harmonicFreq > 18000) break
 
-      // Per-harmonic amplitude envelope: higher harmonics decay faster
       const harmonicGainNode = ctx.createGain()
-      const baseAmp = h.amp * 0.18 // scale down since we have many oscillators
+      const baseAmp = h.amp * 0.18
       harmonicGainNode.gain.setValueAtTime(baseAmp, now)
-      // Higher harmonics lose energy faster
       const harmonicDecayTime = sustainTime * h.decay
-      harmonicGainNode.gain.exponentialRampToValueAtTime(
-        baseAmp * 0.01,
-        now + harmonicDecayTime,
-      )
+      harmonicGainNode.gain.exponentialRampToValueAtTime(baseAmp * 0.01, now + harmonicDecayTime)
       harmonicGainNode.connect(noteGain)
       extras.push(harmonicGainNode)
 
-      // Create multiple slightly-detuned oscillators per harmonic (multi-string simulation)
       for (let s = 0; s < numStrings; s++) {
         const osc = ctx.createOscillator()
         osc.type = 'sine'
         osc.frequency.setValueAtTime(harmonicFreq, now)
 
-        // Detune each "string" slightly differently (±1.5 cents spread)
-        // String 0 = center, others spread symmetrically
         const detuneSpread = 1.5
         let detuneCents: number
-        if (numStrings === 1) {
-          detuneCents = 0
-        } else if (numStrings === 2) {
-          detuneCents = s === 0 ? -detuneSpread : detuneSpread
-        } else {
-          detuneCents = (s - 1) * detuneSpread
-        }
-        // Add tiny random variation per string (+/- 0.3 cents)
+        if (numStrings === 1) detuneCents = 0
+        else if (numStrings === 2) detuneCents = s === 0 ? -detuneSpread : detuneSpread
+        else detuneCents = (s - 1) * detuneSpread
         detuneCents += (Math.random() - 0.5) * 0.6
         osc.detune.setValueAtTime(detuneCents, now)
 
@@ -205,46 +318,39 @@ class AudioEngine {
       }
     }
 
-    // ─ Hammer strike transient
+    // Hammer strike transient
     const hammerDuration = 0.012
     const bufferSize = Math.ceil(ctx.sampleRate * hammerDuration)
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
     const noiseData = noiseBuffer.getChannelData(0)
     for (let i = 0; i < bufferSize; i++) {
-      // Shaped noise burst — sharper attack, faster decay
       const env = Math.pow(1 - i / bufferSize, 2)
       noiseData[i] = (Math.random() * 2 - 1) * env
     }
-
     const hammerSource = ctx.createBufferSource()
     hammerSource.buffer = noiseBuffer
-
     const hammerBPF = ctx.createBiquadFilter()
     hammerBPF.type = 'bandpass'
-    // Hammer brightness varies with pitch — higher notes have brighter hammers
     hammerBPF.frequency.value = Math.min(freq * 6, 10000)
     hammerBPF.Q.value = 1.2
-
     const hammerGain = ctx.createGain()
     hammerGain.gain.setValueAtTime(0.25, now)
     hammerGain.gain.exponentialRampToValueAtTime(0.001, now + hammerDuration)
-
     hammerSource.connect(hammerBPF)
     hammerBPF.connect(hammerGain)
     hammerGain.connect(noteGain)
     hammerSource.start(now)
     hammerSource.stop(now + hammerDuration + 0.01)
-
     extras.push(hammerBPF, hammerGain)
 
-    // ─ Sympathetic resonance: a very quiet, slow-building octave above
+    // Sympathetic resonance
     if (freq * 2 < 16000) {
       const sympOsc = ctx.createOscillator()
       sympOsc.type = 'sine'
       sympOsc.frequency.setValueAtTime(freq * 2, now)
       const sympGain = ctx.createGain()
       sympGain.gain.setValueAtTime(0, now)
-      sympGain.gain.linearRampToValueAtTime(0.012, now + 0.3) // slowly fades in
+      sympGain.gain.linearRampToValueAtTime(0.012, now + 0.3)
       sympGain.gain.exponentialRampToValueAtTime(0.001, now + sustainTime * 0.6)
       sympOsc.connect(sympGain)
       sympGain.connect(noteGain)
@@ -259,66 +365,6 @@ class AudioEngine {
 
     if (fixedDuration) {
       oscillators[0].onended = () => {
-        this.cleanupNote(midi)
-      }
-    }
-
-    return active
-  }
-
-  // ─── Electric Piano Synthesis ────────────────────────────────────
-
-  private startElectricNote(midi: number, fixedDuration?: number): ActiveNote {
-    const ctx = this.ensureContext()
-    const master = this.getMasterGain()
-    const freq = noteFrequency(midi)
-    const now = ctx.currentTime
-
-    const noteGain = ctx.createGain()
-    noteGain.gain.setValueAtTime(0, now)
-    noteGain.connect(master)
-
-    if (fixedDuration) {
-      const attack = 0.01
-      const decay = 0.15
-      const sustainLevel = 0.4
-      const release = 0.3
-      noteGain.gain.linearRampToValueAtTime(0.8, now + attack)
-      noteGain.gain.linearRampToValueAtTime(sustainLevel, now + attack + decay)
-      noteGain.gain.setValueAtTime(sustainLevel, now + fixedDuration - release)
-      noteGain.gain.linearRampToValueAtTime(0, now + fixedDuration)
-    } else {
-      noteGain.gain.linearRampToValueAtTime(0.7, now + 0.01)
-      noteGain.gain.linearRampToValueAtTime(0.4, now + 0.15)
-    }
-
-    // Fundamental (sine) + overtone (triangle) for classic e-piano warmth
-    const osc1 = ctx.createOscillator()
-    osc1.type = 'sine'
-    osc1.frequency.setValueAtTime(freq, now)
-    osc1.connect(noteGain)
-
-    const osc2 = ctx.createOscillator()
-    osc2.type = 'triangle'
-    osc2.frequency.setValueAtTime(freq, now)
-    const overtoneGain = ctx.createGain()
-    overtoneGain.gain.value = 0.25
-    osc2.connect(overtoneGain)
-    overtoneGain.connect(noteGain)
-    osc2.detune.setValueAtTime(3, now)
-
-    osc1.start(now)
-    osc2.start(now)
-    if (fixedDuration) {
-      osc1.stop(now + fixedDuration + 0.05)
-      osc2.stop(now + fixedDuration + 0.05)
-    }
-
-    const active: ActiveNote = { oscillators: [osc1, osc2], gain: noteGain, extras: [overtoneGain] }
-    this.activeOscillators.set(midi, active)
-
-    if (fixedDuration) {
-      osc1.onended = () => {
         this.cleanupNote(midi)
       }
     }
@@ -355,22 +401,23 @@ class AudioEngine {
 
     const ctx = this.ensureContext()
     const now = ctx.currentTime
-    // Grand piano: long damper release (like lifting finger off key with pedal resonance)
-    // The note doesn't cut abruptly — it fades like real felt dampers landing on strings
-    const release = this._mode === 'grand' ? 1.8 : 0.3
+    // Grand samples: fade out over 2s (damper landing on strings)
+    // Electric synth: fade out over 1.8s (long resonance tail)
+    const release = this._mode === 'grand' ? 2.0 : 1.8
 
     active.gain.gain.cancelScheduledValues(now)
     active.gain.gain.setValueAtTime(active.gain.gain.value, now)
-    // Grand uses exponential for more natural fade; electric uses linear
-    if (this._mode === 'grand') {
-      active.gain.gain.exponentialRampToValueAtTime(0.001, now + release)
-      active.gain.gain.linearRampToValueAtTime(0, now + release + 0.05)
-    } else {
-      active.gain.gain.linearRampToValueAtTime(0, now + release)
-    }
+    active.gain.gain.exponentialRampToValueAtTime(0.001, now + release)
+    active.gain.gain.linearRampToValueAtTime(0, now + release + 0.05)
 
+    // Stop oscillators (electric mode)
     for (const osc of active.oscillators) {
       osc.stop(now + release + 0.1)
+    }
+
+    // Stop sample source (grand mode)
+    if (active.source) {
+      active.source.stop(now + release + 0.1)
     }
 
     this.activeOscillators.delete(midi)

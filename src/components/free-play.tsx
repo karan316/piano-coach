@@ -32,6 +32,15 @@ export function FreePlay({ onBack }: FreePlayProps) {
   const midi = useMidi()
   const keyboard = useKeyboardInput({ baseOctave: startOctave })
 
+  // Preload piano samples for the current range
+  useEffect(() => {
+    if (audio.mode === 'grand') {
+      const startMidi = (startOctave + 1) * 12
+      const endMidi = startMidi + octaves * 12
+      void audio.preloadSamples(startMidi, endMidi)
+    }
+  }, [audio, startOctave, octaves])
+
   const allActiveNotes = new Set([...midi.activeNotes, ...keyboard.activeKeys])
 
   // Track currently played notes for staff display

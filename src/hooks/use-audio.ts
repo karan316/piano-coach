@@ -19,6 +19,14 @@ export function useAudio() {
   const setMode = useCallback((m: PianoMode) => {
     audioEngine.mode = m
     setModeState(m)
+    // Preload samples when switching to grand mode
+    if (m === 'grand') {
+      void audioEngine.preloadSamples(48, 84) // C3 to C6
+    }
+  }, [])
+
+  const preloadSamples = useCallback((startMidi: number, endMidi: number) => {
+    return audioEngine.preloadSamples(startMidi, endMidi)
   }, [])
 
   const playNote = useCallback((midi: number, duration?: number) => {
@@ -52,5 +60,5 @@ export function useAudio() {
     }
   }, [])
 
-  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode }
+  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode, preloadSamples }
 }

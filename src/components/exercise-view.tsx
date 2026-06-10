@@ -58,6 +58,15 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
   const { stats, appendEntry } = usePracticeLog()
   const [hasListened, setHasListened] = useState(false)
 
+  // Preload piano samples for the current octave range
+  useEffect(() => {
+    if (audio.mode === 'grand') {
+      const startMidi = (startOctave + 1) * 12
+      const endMidi = startMidi + octaves * 12
+      void audio.preloadSamples(startMidi, endMidi)
+    }
+  }, [audio, startOctave, octaves])
+
   const game = useGame({
     exercise,
     stats,
