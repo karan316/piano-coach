@@ -2,7 +2,5 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "piano-coach",
   "compatibility_date": "2025-09-02",
-  "pages": {
-    "build_output_dir": "dist/client"
-  }
+  "pages_build_output_dir": "dist/client"
 }
