@@ -1,0 +1,281 @@
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { ArrowLeft, Play } from 'lucide-react'
+import { getExercise } from '#/lib/game-logic'
+import { noteNameToMidi, midiToLetter } from '#/lib/notes'
+import { useGame } from '#/hooks/use-game'
+import { useAudio } from '#/hooks/use-audio'
+import { useMidi } from '#/hooks/use-midi'
+import { useKeyboardInput } from '#/hooks/use-keyboard-input'
+import { usePracticeLog } from '#/hooks/use-practice-log'
+import { PianoKeyboard } from './piano-keyboard'
+import { DashboardBar } from './dashboard-bar'
+import { ExerciseSettings } from './exercise-settings'
+import { FeedbackOverlay } from './feedback-overlay'
+import { NotePrompt } from './note-prompt'
+import { StaffPrompt } from './staff-prompt'
+import { IntervalPrompt } from './interval-prompt'
+import { ChordPrompt } from './chord-prompt'
+import { EarTrainingPrompt } from './ear-training-prompt'
+
+interface ExerciseViewProps {
+  exerciseId: string
+  onBack: () => void
+}
+
+function getStoredSetting<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback
+  const stored = localStorage.getItem(key)
+  if (stored === null) return fallback
+  try {
+    return JSON.parse(stored) as T
+  } catch {
+    return fallback
+  }
+}
+
+export function ExerciseView({ exerciseId, onBack }: ExerciseViewProps) {
+  const exercise = getExercise(exerciseId)
+  if (!exercise) return <div className="p-8 text-center text-gray-500">Exercise not found</div>
+
+  return <ExerciseViewInner exercise={exercise} onBack={onBack} />
+}
+
+function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof getExercise> & {}; onBack: () => void }) {
+  // Settings
+  const [octaves, setOctaves] = useState(() => getStoredSetting('piano-octaves', 2))
+  const [startOctave, setStartOctave] = useState(() => getStoredSetting('piano-start-octave', 4))
+  const [showLabels, setShowLabels] = useState(() => getStoredSetting('piano-labels', false))
+
+  // Persist settings
+  useEffect(() => { localStorage.setItem('piano-octaves', JSON.stringify(octaves)) }, [octaves])
+  useEffect(() => { localStorage.setItem('piano-start-octave', JSON.stringify(startOctave)) }, [startOctave])
+  useEffect(() => { localStorage.setItem('piano-labels', JSON.stringify(showLabels)) }, [showLabels])
+
+  // Hooks
+  const audio = useAudio()
+  const midi = useMidi()
+  const keyboard = useKeyboardInput({ baseOctave: startOctave, enabled: true })
+  const { stats, appendEntry } = usePracticeLog()
+  const [hasListened, setHasListened] = useState(false)
+
+  const game = useGame({
+    exercise,
+    stats,
+    octave: startOctave,
+    onCorrect: (entry) => {
+      audio.playChime()
+      void appendEntry({ exerciseId: exercise.id, ...entry, correct: true })
+    },
+    onIncorrect: (entry) => {
+      audio.playBuzz()
+      void appendEntry({ exerciseId: exercise.id, ...entry, correct: false })
+    },
+  })
+
+  // Merge active notes from MIDI + keyboard
+  const allActiveNotes = new Set([...midi.activeNotes, ...keyboard.activeKeys])
+
+  // Build highlighted notes for piano display
+  const highlightedNotes = new Map<number, 'correct' | 'incorrect' | 'prompt'>()
+  if (game.phase === 'prompting' || game.phase === 'incorrect') {
+    if (exercise.type === 'single' || exercise.type === 'ear') {
+      // Could highlight the target key — but that gives it away for ear training
+      if (exercise.type !== 'ear' && exercise.showStaff === false) {
+        // For note-finder, don't show on keyboard
+      }
+    }
+  }
+
+  // Handle note input from both MIDI and keyboard
+  const handleNoteOn = useCallback(
+    (midi_note: number) => {
+      audio.startNote(midi_note)
+
+      if (exercise.type === 'chord') {
+        game.handleChordNoteOn(midi_note)
+      } else {
+        game.handleNotePlayed(midi_note)
+      }
+    },
+    [audio, game, exercise.type],
+  )
+
+  const handleNoteOff = useCallback(
+    (midi_note: number) => {
+      audio.releaseNote(midi_note)
+      if (exercise.type === 'chord') {
+        game.handleChordNoteOff(midi_note)
+      }
+    },
+    [audio, game, exercise.type],
+  )
+
+  // Subscribe to MIDI and keyboard events
+  const midiHandlerRef = useRef(handleNoteOn)
+  const midiOffHandlerRef = useRef(handleNoteOff)
+  midiHandlerRef.current = handleNoteOn
+  midiOffHandlerRef.current = handleNoteOff
+
+  useEffect(() => {
+    const unsubMidi = midi.onNoteOn((note) => midiHandlerRef.current(note))
+    return unsubMidi
+  }, [midi])
+
+  useEffect(() => {
+    const unsubOn = keyboard.onNoteOn((note) => midiHandlerRef.current(note))
+    const unsubOff = keyboard.onNoteOff((note) => midiOffHandlerRef.current(note))
+    return () => { unsubOn(); unsubOff() }
+  }, [keyboard])
+
+  // Ear training: play the note
+  const playEarNote = useCallback(() => {
+    if (game.currentNoteWithOctave) {
+      const earMidi = noteNameToMidi(game.currentNoteWithOctave)
+      audio.playNote(earMidi, 1.2)
+      setHasListened(true)
+    }
+  }, [game.currentNoteWithOctave, audio])
+
+  // Reset hasListened on new prompt
+  useEffect(() => {
+    setHasListened(false)
+  }, [game.currentNote])
+
+  // Render the appropriate prompt
+  function renderPrompt() {
+    if (game.phase === 'idle') {
+      return (
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{exercise.name}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{exercise.description}</p>
+          <button
+            onClick={() => { audio.init(); game.start() }}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+          >
+            <Play size={18} />
+            Start Exercise
+          </button>
+        </div>
+      )
+    }
+
+    switch (exercise.type) {
+      case 'single':
+        if (exercise.showStaff) {
+          return (
+            <StaffPrompt
+              note={game.currentNote}
+              noteWithOctave={game.currentNoteWithOctave}
+              phase={game.phase}
+              showNoteName={exercise.id !== 'staff-reader'} // hide name for pure staff reading
+            />
+          )
+        }
+        return <NotePrompt note={game.currentNote} phase={game.phase} />
+
+      case 'interval':
+        return (
+          <IntervalPrompt
+            prompt={game.intervalPrompt}
+            currentStep={game.intervalStep}
+            phase={game.phase}
+          />
+        )
+
+      case 'chord':
+        return (
+          <ChordPrompt
+            notes={game.chordNotes}
+            chordInfo={game.chordInfo}
+            heldCount={game.heldChordNotes.size}
+            phase={game.phase}
+          />
+        )
+
+      case 'ear':
+        return (
+          <EarTrainingPrompt
+            noteWithOctave={game.currentNoteWithOctave}
+            phase={game.phase}
+            onPlaySound={playEarNote}
+            hasListened={hasListened}
+          />
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Feedback overlay */}
+      <FeedbackOverlay type={game.feedbackType} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        >
+          <ArrowLeft size={16} />
+          <span className="hidden sm:inline">Back</span>
+        </button>
+
+        <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{exercise.name}</h1>
+
+        <ExerciseSettings
+          octaves={octaves}
+          onOctavesChange={setOctaves}
+          showLabels={showLabels}
+          onShowLabelsChange={setShowLabels}
+          startOctave={startOctave}
+          onStartOctaveChange={setStartOctave}
+          soundMode={audio.mode}
+          onSoundModeChange={audio.setMode}
+        />
+      </div>
+
+      {/* Dashboard bar (only when playing) */}
+      {game.phase !== 'idle' && (
+        <div className="px-4 pb-2">
+          <DashboardBar
+            streak={game.streak}
+            accuracy={game.accuracy}
+            lastReactionMs={game.lastReactionMs}
+            sessionStartTime={game.sessionStartTime}
+            totalAttempts={game.totalAttempts}
+          />
+        </div>
+      )}
+
+      {/* Prompt area */}
+      <div className="flex flex-1 items-center justify-center px-4 py-4">
+        {renderPrompt()}
+      </div>
+
+      {/* Piano */}
+      <div className="px-2 pb-3 sm:px-4 sm:pb-4">
+        <PianoKeyboard
+          startOctave={startOctave}
+          numOctaves={octaves}
+          activeNotes={allActiveNotes}
+          highlightedNotes={highlightedNotes}
+          onNoteOn={handleNoteOn}
+          onNoteOff={handleNoteOff}
+          showLabels={showLabels}
+        />
+        {/* Octave indicator */}
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+          <span>C{startOctave}–C{startOctave + octaves}</span>
+          <span className="text-gray-200 dark:text-gray-700">|</span>
+          <span>
+            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-gray-800">Z</kbd>
+            <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-gray-800">X</kbd>
+            {' '}octave
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
