@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { generateKeyRange, isBlackKey, midiToLetter } from '#/lib/notes'
 
 interface PianoKeyboardProps {
@@ -24,6 +24,7 @@ export function PianoKeyboard({
 }: PianoKeyboardProps) {
   const keys = generateKeyRange(startOctave, numOctaves)
   const pressedRef = useRef<Set<number>>(new Set())
+  const [pointerPressed, setPointerPressed] = useState<Set<number>>(new Set())
 
   const whiteKeys = keys.filter((k) => !isBlackKey(k))
   const totalWhiteKeys = whiteKeys.length
@@ -33,6 +34,7 @@ export function PianoKeyboard({
       if (!interactive) return
       if (pressedRef.current.has(midi)) return
       pressedRef.current.add(midi)
+      setPointerPressed((prev) => { const next = new Set(prev); next.add(midi); return next })
       onNoteOn?.(midi)
     },
     [interactive, onNoteOn],
@@ -42,6 +44,7 @@ export function PianoKeyboard({
     (midi: number) => {
       if (!interactive) return
       pressedRef.current.delete(midi)
+      setPointerPressed((prev) => { const next = new Set(prev); next.delete(midi); return next })
       onNoteOff?.(midi)
     },
     [interactive, onNoteOff],
@@ -51,6 +54,7 @@ export function PianoKeyboard({
     (midi: number) => {
       if (pressedRef.current.has(midi)) {
         pressedRef.current.delete(midi)
+        setPointerPressed((prev) => { const next = new Set(prev); next.delete(midi); return next })
         onNoteOff?.(midi)
       }
     },
@@ -112,44 +116,52 @@ export function PianoKeyboard({
 
   return (
     <div className="relative w-full select-none" style={{ touchAction: 'manipulation' }}>
-      {/* Wood trim above keys */}
-      <div className="h-3 rounded-t-lg bg-gradient-to-b from-amber-950 via-amber-900 to-amber-800 shadow-inner dark:from-gray-900 dark:via-gray-800 dark:to-gray-700" />
+      {/* Wood trim */}
+      <div
+        className="h-3 rounded-t-lg"
+        style={{ background: 'linear-gradient(to bottom, #3d1f0a, #5c2e0e 30%, #4a2409 70%, #2d1506)' }}
+      />
 
       {/* Piano body */}
-      <div className="relative overflow-hidden rounded-b-lg bg-gray-100 shadow-xl dark:bg-gray-900" style={{ aspectRatio: `${totalWhiteKeys * 1.4}/4` }}>
+      <div className="relative overflow-hidden bg-[#181818]" style={{ aspectRatio: `${totalWhiteKeys * 1.4}/4` }}>
         {/* White keys */}
         {whiteKeys.map((midi, index) => {
           const isActive = activeNotes.has(midi)
           const highlight = getKeyHighlight(midi)
           const label = midiToLetter(midi)
+          const isPressed = isActive || !!highlight || pointerPressed.has(midi)
 
           return (
             <button
               key={midi}
               aria-label={`Piano key ${label}`}
-              className={`absolute top-0 bottom-0 border-r border-gray-200 transition-all duration-75 dark:border-gray-700 ${
-                isActive && !highlight
-                  ? 'translate-y-0.5 bg-gradient-to-b from-gray-100 to-gray-200 shadow-inner dark:from-gray-200 dark:to-gray-300'
-                  : highlight
-                    ? `translate-y-0.5 ${highlight}`
-                    : 'bg-gradient-to-b from-white via-white to-gray-50 shadow-sm hover:from-gray-50 hover:to-gray-100 active:translate-y-0.5 active:shadow-inner dark:from-gray-50 dark:via-gray-100 dark:to-gray-200'
-              }`}
               style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
                 left: `${index * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                borderRadius: '0 0 6px 6px',
+                borderRadius: '0 0 5px 5px',
+                borderRight: '1px solid #d0d0d0',
+                background: highlight
+                  ? undefined
+                  : isActive
+                    ? 'linear-gradient(to bottom, #fff8ee, #f0e8d8)'
+                    : 'linear-gradient(to bottom, #ffffff, #f8f8f6 60%, #eae8e3)',
+                boxShadow: isPressed
+                  ? 'inset 0 1px 3px rgba(0,0,0,0.15), 0 1px 0 rgba(0,0,0,0.1)'
+                  : '0 4px 0 #b8b4aa, 0 5px 4px rgba(0,0,0,0.3), inset 0 0 0 rgba(0,0,0,0)',
+                transform: isPressed ? 'translateY(3px)' : 'translateY(0)',
+                transition: 'transform 50ms ease-out, box-shadow 50ms ease-out',
               }}
+              className={highlight ? highlight : ''}
               onPointerDown={() => handlePointerDown(midi)}
               onPointerUp={() => handlePointerUp(midi)}
               onPointerLeave={() => handlePointerLeave(midi)}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {/* Key bottom groove effect */}
-              <div className="absolute right-1 bottom-1 left-1 h-2 rounded-b bg-gradient-to-b from-transparent to-gray-200 dark:to-gray-300" />
-
-              {/* Label */}
               {showLabels && (
-                <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-medium text-gray-400 select-none">
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-medium text-gray-400 select-none">
                   {label}
                 </span>
               )}
@@ -162,35 +174,48 @@ export function PianoKeyboard({
           const isActive = activeNotes.has(midi)
           const highlight = getKeyHighlight(midi)
           const label = midiToLetter(midi)
+          const isPressed = isActive || !!highlight || pointerPressed.has(midi)
 
           return (
             <button
               key={midi}
               aria-label={`Piano key ${label}`}
-              className={`absolute top-0 z-10 transition-all duration-75 ${
-                isActive && !highlight
-                  ? 'translate-y-0.5 bg-gradient-to-b from-gray-700 to-gray-800 shadow-md'
-                  : highlight
-                    ? `translate-y-0.5 ${highlight}`
-                    : 'bg-gradient-to-b from-gray-800 via-gray-900 to-black shadow-lg hover:from-gray-700 hover:via-gray-800 hover:to-gray-900 active:translate-y-0.5 active:from-gray-800 active:to-black active:shadow-md'
-              }`}
               style={{
+                position: 'absolute',
+                top: -3,
                 left: `${leftPercent}%`,
-                width: `${whiteKeyWidth * 0.6}%`,
-                height: '60%',
+                width: `${whiteKeyWidth * 0.58}%`,
+                height: 'calc(60% + 3px)',
                 borderRadius: '0 0 4px 4px',
+                zIndex: 10,
+                background: highlight
+                  ? undefined
+                  : isActive
+                    ? 'linear-gradient(to bottom, #5a4000, #3a2800)'
+                    : 'linear-gradient(to bottom, #2a2a2a, #111 40%, #000)',
+                boxShadow: isPressed
+                  ? 'none'
+                  : '0 2px 4px rgba(0,0,0,0.08)',
+                transform: isPressed ? 'translateY(3px)' : 'translateY(0)',
+                transition: 'transform 50ms ease-out, box-shadow 50ms ease-out',
               }}
+              className={highlight ? highlight : ''}
               onPointerDown={() => handlePointerDown(midi)}
               onPointerUp={() => handlePointerUp(midi)}
               onPointerLeave={() => handlePointerLeave(midi)}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {/* Glossy highlight effect */}
-              <div className="absolute top-0 right-0.5 left-0.5 h-1/4 rounded-b bg-gradient-to-b from-white/10 to-transparent" />
-
-              {/* Label */}
+              {/* Glossy sheen */}
+              <div
+                className="pointer-events-none absolute top-0 right-[1px] left-[1px]"
+                style={{
+                  height: '45%',
+                  borderRadius: '0 0 3px 3px',
+                  background: 'linear-gradient(to bottom, rgba(255,255,255,0.12), transparent)',
+                }}
+              />
               {showLabels && (
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-400 select-none">
+                <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] font-medium text-gray-500 select-none">
                   {label}
                 </span>
               )}
@@ -199,8 +224,11 @@ export function PianoKeyboard({
         })}
       </div>
 
-      {/* Bottom shadow */}
-      <div className="h-1.5 rounded-b-xl bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800" />
+      {/* Bottom wood lip */}
+      <div
+        className="h-1.5 rounded-b-lg"
+        style={{ background: 'linear-gradient(to bottom, #4a2409, #2d1506)' }}
+      />
     </div>
   )
 }
