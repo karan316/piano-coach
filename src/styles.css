@@ -1,6 +1,8 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
@@ -33,6 +35,22 @@ body {
   --color-accent: #F59E0B;
   --color-accent-2: #14B8A6;
   color-scheme: dark;
+}
+
+/* ─── Theme Transition (View Transition API) ──────────────────────── */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
 }
 
 /* ─── Animations ──────────────────────────────────────────────────── */
