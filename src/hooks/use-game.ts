@@ -6,10 +6,12 @@ import {
   checkChordMatch,
   generateInterval,
   generateChordPrompt,
+  generateScalePrompt,
   generateEarTrainingNote,
   generateMultipleChoice,
   type IntervalPrompt,
   type ChordInfo,
+  type ScaleInfo,
   type ExerciseConfig,
   type MultipleChoiceQuestion,
 } from '#/lib/game-logic'
@@ -29,6 +31,9 @@ export interface GameState {
   chordNotes: string[] // ["C4", "E4", "G4"]
   chordInfo: ChordInfo | null
   heldChordNotes: Set<number> // Currently held MIDI notes for chord detection
+  scaleNotes: string[]        // ["C4", "D4", ...] for scale exercise
+  scaleInfo: ScaleInfo | null
+  scaleStep: number           // Current step in the scale (0-based)
   mcQuestion: MultipleChoiceQuestion | null // For multiple-choice exercises
   streak: number
   totalCorrect: number
@@ -43,6 +48,8 @@ type GameAction =
   | { type: 'NEW_PROMPT'; note: string; noteWithOctave: string }
   | { type: 'NEW_INTERVAL'; prompt: IntervalPrompt }
   | { type: 'NEW_CHORD'; notes: string[]; chord: ChordInfo }
+  | { type: 'NEW_SCALE'; notes: string[]; scale: ScaleInfo }
+  | { type: 'SCALE_STEP_DONE' }
   | { type: 'NEW_EAR'; noteWithOctave: string }
   | { type: 'NEW_MC_QUESTION'; question: MultipleChoiceQuestion }
   | { type: 'CORRECT'; reactionMs: number }
@@ -90,6 +97,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         feedbackType: null,
         currentNote: action.notes.join(', '),
       }
+    case 'NEW_SCALE':
+      return {
+        ...state,
+        phase: 'prompting',
+        scaleNotes: action.notes,
+        scaleInfo: action.scale,
+        scaleStep: 0,
+        feedbackType: null,
+        currentNote: action.scale.name,
+      }
+    case 'SCALE_STEP_DONE':
+      return { ...state, scaleStep: state.scaleStep + 1 }
     case 'NEW_EAR':
       return {
         ...state,
@@ -146,6 +165,9 @@ const initialState: GameState = {
   chordNotes: [],
   chordInfo: null,
   heldChordNotes: new Set(),
+  scaleNotes: [],
+  scaleInfo: null,
+  scaleStep: 0,
   mcQuestion: null,
   streak: 0,
   totalCorrect: 0,
@@ -206,6 +228,9 @@ export function useGame({
     } else if (exercise.type === 'chord') {
       const { notes, chord } = generateChordPrompt(octave)
       dispatch({ type: 'NEW_CHORD', notes, chord })
+    } else if (exercise.type === 'scale') {
+      const { notes, scale } = generateScalePrompt(octave)
+      dispatch({ type: 'NEW_SCALE', notes, scale })
     } else if (exercise.type === 'ear') {
       const noteWithOctave = generateEarTrainingNote(exercise.notePool, octave)
       dispatch({ type: 'NEW_EAR', noteWithOctave })
@@ -361,6 +386,67 @@ export function useGame({
     [exercise.type, state.heldChordNotes],
   )
 
+  // Handle scale: sequential note checking
+  const handleScaleNotePlayed = useCallback(
+    (midi: number) => {
+      if (exercise.type !== 'scale') return
+      if (state.phase !== 'prompting' && state.phase !== 'incorrect') return
+      if (state.scaleStep >= state.scaleNotes.length) return
+
+      const reactionMs = Math.round(performance.now() - promptTimeRef.current)
+      const expectedNote = state.scaleNotes[state.scaleStep]
+      const expectedLetter = midiToLetter(noteNameToMidi(expectedNote))
+
+      if (checkNoteMatch(midi, expectedLetter)) {
+        const nextStep = state.scaleStep + 1
+        if (nextStep >= state.scaleNotes.length) {
+          // All notes played — scale complete!
+          dispatch({ type: 'CORRECT', reactionMs })
+          posthog.capture('exercise_answer_correct', {
+            exercise_id: exercise.id,
+            exercise_type: exercise.type,
+            prompt_note: state.scaleInfo?.name,
+            played_note: 'scale',
+            reaction_time_ms: reactionMs,
+            streak: state.streak + 1,
+          })
+          onCorrect?.({
+            promptNote: state.scaleInfo?.name ?? '',
+            playedNote: 'scale',
+            reactionTimeMs: reactionMs,
+          })
+        } else {
+          dispatch({ type: 'SCALE_STEP_DONE' })
+        }
+      } else if (state.phase === 'prompting') {
+        dispatch({ type: 'INCORRECT' })
+        posthog.capture('exercise_answer_incorrect', {
+          exercise_id: exercise.id,
+          exercise_type: exercise.type,
+          prompt_note: expectedLetter,
+          played_note: midiToLetter(midi),
+          reaction_time_ms: reactionMs,
+        })
+        onIncorrect?.({
+          promptNote: expectedLetter,
+          playedNote: midiToLetter(midi),
+          reactionTimeMs: reactionMs,
+        })
+      }
+    },
+    [
+      exercise.type,
+      exercise.id,
+      state.phase,
+      state.scaleStep,
+      state.scaleNotes,
+      state.scaleInfo,
+      state.streak,
+      onCorrect,
+      onIncorrect,
+    ],
+  )
+
   // Auto-advance after correct answer
   useEffect(() => {
     if (state.phase === 'correct') {
@@ -419,6 +505,7 @@ export function useGame({
     handleNotePlayed,
     handleChordNoteOn,
     handleChordNoteOff,
+    handleScaleNotePlayed,
     handleMCAnswer,
     reset,
   }

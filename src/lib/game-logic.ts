@@ -10,7 +10,7 @@ import {
     WHITE_KEYS
 } from './notes';
 import type { PracticeStats } from './practice-store';
-import { getKeySignatureDistractors, getRandomKeySignature } from './scales';
+import { getKeySignatureDistractors, getRandomKeySignature, SCALE_TYPES, getScaleNotes, getScaleDisplayName } from './scales';
 
 // ─── Exercise Definitions ─────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ export interface ExerciseConfig {
   level: 'beginner' | 'beginner+' | 'intermediate' | 'intermediate+'| 'all'
   notePool: string[] // Note names without octave (e.g. ['C', 'D', 'E'])
   showStaff: boolean
-  type: 'single' | 'interval' | 'chord' | 'ear' | 'multiple-choice' | 'rhythm'
+  type: 'single' | 'interval' | 'chord' | 'scale' | 'ear' | 'multiple-choice' | 'rhythm'
   /** Category for grouping in the exercise grid */
   category: 'notes' | 'intervals' | 'ear' | 'rhythm' | 'tools'
 }
@@ -117,6 +117,16 @@ export const EXERCISES: ExerciseConfig[] = [
     notePool: [...WHITE_KEYS],
     showStaff: false,
     type: 'multiple-choice',
+    category: 'intervals',
+  },
+  {
+    id: 'scale-builder',
+    name: 'Scale Builder',
+    description: 'Play scales note by note ascending',
+    level: 'intermediate',
+    notePool: [...WHITE_KEYS],
+    showStaff: false,
+    type: 'scale',
     category: 'intervals',
   },
   {
@@ -359,6 +369,46 @@ export function generateChordPrompt(octave: number): {
   const chord = detectChord([rootMidi, thirdMidi, fifthMidi])!
 
   return { notes, chord }
+}
+
+// ─── Scale Prompt ─────────────────────────────────────────────────────
+
+export interface ScaleInfo {
+  name: string       // e.g. "C Major"
+  root: string       // e.g. "C"
+  type: string       // e.g. "Major"
+  description: string
+  notes: string[]    // note names without octave ["C", "D", "E", "F", "G", "A", "B"]
+}
+
+export function generateScalePrompt(octave: number): {
+  notes: string[] // e.g. ["C4", "D4", "E4", "F4", "G4", "A4", "B4"]
+  scale: ScaleInfo
+} {
+  const roots: NoteLetter[] = ['C', 'D', 'E', 'F', 'G', 'A']
+  const root = roots[Math.floor(Math.random() * roots.length)]
+  const scaleDef = SCALE_TYPES[Math.floor(Math.random() * SCALE_TYPES.length)]
+  const rootMidi = noteNameToMidi(`${root}${octave}`)
+  const midis = getScaleNotes(rootMidi, scaleDef)
+  const notes = midis.map((m) => midiToNoteName(m))
+  const noteLetters = midis.map((m) => midiToLetter(m))
+
+  const descriptions: Record<string, string> = {
+    'Major': 'The bright, happy-sounding major scale — W W H W W W H',
+    'Natural Minor': 'The natural minor scale — W H W W H W W',
+    'Harmonic Minor': 'The harmonic minor scale — raised 7th gives an exotic sound',
+  }
+
+  return {
+    notes,
+    scale: {
+      name: getScaleDisplayName(root, scaleDef),
+      root,
+      type: scaleDef.name,
+      description: descriptions[scaleDef.name] ?? '',
+      notes: noteLetters,
+    },
+  }
 }
 
 // ─── Answer Checking ──────────────────────────────────────────────────

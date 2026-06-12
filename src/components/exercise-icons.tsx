@@ -184,6 +184,7 @@ export const EXERCISE_ICON_MAP: Record<string, React.ComponentType<IconProps>> =
   'keyboard-interval-id': IntervalIcon, // reuse interval icon
   'chord-builder': ChordIcon,
   'keyboard-chord-id': ChordIcon, // reuse chord icon
+  'scale-builder': IntervalIcon, // ascending notes
   'scale-id': StaffReaderIcon, // reuse staff icon
   'ear-training': EarTrainingIcon,
   'ear-interval': EarTrainingIcon, // reuse ear icon

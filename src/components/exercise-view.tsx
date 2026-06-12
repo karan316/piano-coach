@@ -17,6 +17,7 @@ import { NotePrompt } from './note-prompt'
 import { StaffPrompt } from './staff-prompt'
 import { IntervalPrompt } from './interval-prompt'
 import { ChordPrompt } from './chord-prompt'
+import { ScalePrompt } from './scale-prompt'
 import { EarTrainingPrompt } from './ear-training-prompt'
 import { MultipleChoicePrompt } from './multiple-choice-prompt'
 import { RhythmPrompt } from './rhythm-prompt'
@@ -130,6 +131,8 @@ function ExerciseViewInner({
 
       if (exercise.type === 'chord') {
         game.handleChordNoteOn(midi_note)
+      } else if (exercise.type === 'scale') {
+        game.handleScaleNotePlayed(midi_note)
       } else {
         game.handleNotePlayed(midi_note)
       }
@@ -262,6 +265,16 @@ function ExerciseViewInner({
             notes={game.chordNotes}
             chordInfo={game.chordInfo}
             heldCount={game.heldChordNotes.size}
+            phase={game.phase}
+          />
+        )
+
+      case 'scale':
+        return (
+          <ScalePrompt
+            notes={game.scaleNotes}
+            scaleInfo={game.scaleInfo}
+            currentStep={game.scaleStep}
             phase={game.phase}
           />
         )
