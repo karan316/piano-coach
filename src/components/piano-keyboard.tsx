@@ -103,8 +103,8 @@ export function PianoKeyboard({
     }
     if (highlight === 'prompt') {
       return isBlack
-        ? 'bg-blue-500 shadow-blue-400/50 shadow-lg'
-        : 'bg-blue-100 shadow-blue-200/50 shadow-lg ring-2 ring-blue-400'
+        ? 'bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.5)]'
+        : 'bg-violet-300 ring-2 ring-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
     }
     if (isActive) {
       return isBlack

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { ArrowLeft, Play } from 'lucide-react'
+import { ArrowLeft, Play, Volume2 } from 'lucide-react'
 import { usePostHog } from '@posthog/react'
 import { Button } from '#/components/ui/button'
 import { getExercise } from '#/lib/game-logic'
@@ -18,6 +18,9 @@ import { StaffPrompt } from './staff-prompt'
 import { IntervalPrompt } from './interval-prompt'
 import { ChordPrompt } from './chord-prompt'
 import { EarTrainingPrompt } from './ear-training-prompt'
+import { MultipleChoicePrompt } from './multiple-choice-prompt'
+import { RhythmPrompt } from './rhythm-prompt'
+import { KeySignatureDisplay } from './key-signature-display'
 
 interface ExerciseViewProps {
   exerciseId: string
@@ -95,6 +98,7 @@ function ExerciseViewInner({
     exercise,
     stats,
     octave: startOctave,
+    numOctaves: octaves,
     onCorrect: (entry) => {
       audio.playChime()
       void appendEntry({ exerciseId: exercise.id, ...entry, correct: true })
@@ -111,10 +115,10 @@ function ExerciseViewInner({
   // Build highlighted notes for piano display
   const highlightedNotes = new Map<number, 'correct' | 'incorrect' | 'prompt'>()
   if (game.phase === 'prompting' || game.phase === 'incorrect') {
-    if (exercise.type === 'single' || exercise.type === 'ear') {
-      // Could highlight the target key — but that gives it away for ear training
-      if (exercise.type !== 'ear' && exercise.showStaff === false) {
-        // For note-finder, don't show on keyboard
+    // For multiple-choice keyboard exercises, highlight the prompt keys on the main piano
+    if (exercise.type === 'multiple-choice' && game.mcQuestion?.highlightKeys) {
+      for (const k of game.mcQuestion.highlightKeys) {
+        highlightedNotes.set(k, 'prompt')
       }
     }
   }
@@ -269,6 +273,75 @@ function ExerciseViewInner({
             phase={game.phase}
             onPlaySound={playEarNote}
             hasListened={hasListened}
+          />
+        )
+
+      case 'multiple-choice': {
+        const q = game.mcQuestion
+        if (!q) return null
+
+        // For ear exercises, add a play button
+        const isEarExercise = exercise.id === 'ear-interval' || exercise.id === 'ear-chord'
+
+        return (
+          <MultipleChoicePrompt
+            question={q.prompt}
+            choices={q.choices}
+            correctAnswer={q.correctAnswer}
+            phase={game.phase}
+            onAnswer={game.handleMCAnswer}
+          >
+            {/* Key signature display */}
+            {exercise.id === 'key-signature-id' && (q.keySigSharps || q.keySigFlats) && (
+              <div className="text-foreground">
+                <KeySignatureDisplay
+                  keySignature={{
+                    key: q.correctAnswer,
+                    type: 'major',
+                    sharps: q.keySigSharps ?? [],
+                    flats: q.keySigFlats ?? [],
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Play button for ear exercises */}
+            {isEarExercise && q.playNotes && (
+              <button
+                onClick={() => {
+                  audio.init()
+                  if (q.playSimultaneous) {
+                    for (const n of q.playNotes!) audio.playNote(n, 1.5)
+                  } else {
+                    q.playNotes!.forEach((n, i) => {
+                      setTimeout(() => audio.playNote(n, 0.8), i * 600)
+                    })
+                  }
+                }}
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg transition-all hover:scale-105 active:scale-95"
+              >
+                <Volume2 size={24} />
+              </button>
+            )}
+          </MultipleChoicePrompt>
+        )
+      }
+
+      case 'rhythm':
+        return (
+          <RhythmPrompt
+            octave={startOctave}
+            phase={game.phase}
+            onNoteHit={(timing, note) => {
+              if (timing === 'perfect' || timing === 'good') {
+                void appendEntry({ exerciseId: exercise.id, promptNote: note, playedNote: note, correct: true, reactionTimeMs: 0 })
+              } else {
+                void appendEntry({ exerciseId: exercise.id, promptNote: note, playedNote: '', correct: false, reactionTimeMs: 0 })
+              }
+            }}
+            onComplete={() => {
+              // Rhythm exercise manages its own flow
+            }}
           />
         )
 

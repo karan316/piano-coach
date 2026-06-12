@@ -178,9 +178,17 @@ export const EXERCISE_ICON_MAP: Record<string, React.ComponentType<IconProps>> =
   'note-finder': NoteFinderIcon,
   'staff-reader': StaffReaderIcon,
   'sharp-flat': SharpFlatIcon,
+  'keyboard-note-id': FreePlayIcon, // reuse piano keys icon
+  'key-signature-id': SharpFlatIcon, // reuse sharp/flat icon
   'interval-jump': IntervalIcon,
+  'keyboard-interval-id': IntervalIcon, // reuse interval icon
   'chord-builder': ChordIcon,
+  'keyboard-chord-id': ChordIcon, // reuse chord icon
+  'scale-id': StaffReaderIcon, // reuse staff icon
   'ear-training': EarTrainingIcon,
+  'ear-interval': EarTrainingIcon, // reuse ear icon
+  'ear-chord': EarTrainingIcon, // reuse ear icon
+  'rhythm-training': NoteFinderIcon, // reuse note icon
   'free-play': FreePlayIcon,
   'practice-stats': StatsIcon,
 }

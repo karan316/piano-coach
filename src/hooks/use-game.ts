@@ -7,9 +7,11 @@ import {
   generateInterval,
   generateChordPrompt,
   generateEarTrainingNote,
+  generateMultipleChoice,
   type IntervalPrompt,
   type ChordInfo,
   type ExerciseConfig,
+  type MultipleChoiceQuestion,
 } from '#/lib/game-logic'
 import { midiToLetter, noteNameToMidi } from '#/lib/notes'
 import type { PracticeStats } from '#/lib/practice-store'
@@ -27,6 +29,7 @@ export interface GameState {
   chordNotes: string[] // ["C4", "E4", "G4"]
   chordInfo: ChordInfo | null
   heldChordNotes: Set<number> // Currently held MIDI notes for chord detection
+  mcQuestion: MultipleChoiceQuestion | null // For multiple-choice exercises
   streak: number
   totalCorrect: number
   totalAttempts: number
@@ -41,6 +44,7 @@ type GameAction =
   | { type: 'NEW_INTERVAL'; prompt: IntervalPrompt }
   | { type: 'NEW_CHORD'; notes: string[]; chord: ChordInfo }
   | { type: 'NEW_EAR'; noteWithOctave: string }
+  | { type: 'NEW_MC_QUESTION'; question: MultipleChoiceQuestion }
   | { type: 'CORRECT'; reactionMs: number }
   | { type: 'INCORRECT' }
   | { type: 'INTERVAL_STEP_DONE' }
@@ -94,6 +98,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currentNote: action.noteWithOctave,
         feedbackType: null,
       }
+    case 'NEW_MC_QUESTION':
+      return {
+        ...state,
+        phase: 'prompting',
+        mcQuestion: action.question,
+        currentNote: action.question.correctAnswer,
+        feedbackType: null,
+      }
     case 'CORRECT':
       return {
         ...state,
@@ -134,6 +146,7 @@ const initialState: GameState = {
   chordNotes: [],
   chordInfo: null,
   heldChordNotes: new Set(),
+  mcQuestion: null,
   streak: 0,
   totalCorrect: 0,
   totalAttempts: 0,
@@ -148,6 +161,7 @@ interface UseGameOptions {
   exercise: ExerciseConfig
   stats: PracticeStats | null
   octave: number
+  numOctaves?: number
   onCorrect?: (entry: {
     promptNote: string
     playedNote: string
@@ -164,6 +178,7 @@ export function useGame({
   exercise,
   stats,
   octave,
+  numOctaves = 2,
   onCorrect,
   onIncorrect,
 }: UseGameOptions) {
@@ -194,6 +209,9 @@ export function useGame({
     } else if (exercise.type === 'ear') {
       const noteWithOctave = generateEarTrainingNote(exercise.notePool, octave)
       dispatch({ type: 'NEW_EAR', noteWithOctave })
+    } else if (exercise.type === 'multiple-choice') {
+      const question = generateMultipleChoice(exercise.id, octave, numOctaves)
+      dispatch({ type: 'NEW_MC_QUESTION', question })
     }
     promptTimeRef.current = performance.now()
   }, [exercise, stats, octave])
@@ -353,6 +371,16 @@ export function useGame({
     }
   }, [state.phase, nextPrompt])
 
+  // Auto-advance after incorrect answer for multiple-choice (show answer briefly, then move on)
+  useEffect(() => {
+    if (state.phase === 'incorrect' && exercise.type === 'multiple-choice') {
+      const timer = setTimeout(() => {
+        nextPrompt()
+      }, 1800)
+      return () => clearTimeout(timer)
+    }
+  }, [state.phase, exercise.type, nextPrompt])
+
   // Clear feedback after timeout
   useEffect(() => {
     if (state.feedbackType) {
@@ -365,6 +393,24 @@ export function useGame({
 
   const reset = useCallback(() => dispatch({ type: 'RESET' }), [])
 
+  // Handle multiple-choice answer
+  const handleMCAnswer = useCallback(
+    (choice: string) => {
+      if (state.phase !== 'prompting' || !state.mcQuestion) return
+      const reactionMs = Math.round(performance.now() - promptTimeRef.current)
+      const isCorrect = choice === state.mcQuestion.correctAnswer
+
+      if (isCorrect) {
+        dispatch({ type: 'CORRECT', reactionMs })
+        onCorrect?.({ promptNote: state.mcQuestion.correctAnswer, playedNote: choice, reactionTimeMs: reactionMs })
+      } else {
+        dispatch({ type: 'INCORRECT' })
+        onIncorrect?.({ promptNote: state.mcQuestion.correctAnswer, playedNote: choice, reactionTimeMs: reactionMs })
+      }
+    },
+    [state.phase, state.mcQuestion, onCorrect, onIncorrect],
+  )
+
   return {
     ...state,
     accuracy,
@@ -373,6 +419,7 @@ export function useGame({
     handleNotePlayed,
     handleChordNoteOn,
     handleChordNoteOff,
+    handleMCAnswer,
     reset,
   }
 }
