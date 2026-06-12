@@ -5,6 +5,7 @@ import type {PianoMode} from '#/lib/audio-engine';
 export function useAudio() {
   const [isReady, setIsReady] = useState(false)
   const [mode, setModeState] = useState<PianoMode>(audioEngine.mode)
+  const [dampDuration, setDampState] = useState(audioEngine.dampDuration)
   const initialized = useRef(false)
 
   // Initialize on first user interaction
@@ -23,6 +24,11 @@ export function useAudio() {
     if (m === 'grand') {
       void audioEngine.preloadSamples(48, 84) // C3 to C6
     }
+  }, [])
+
+  const setDampDuration = useCallback((d: number) => {
+    audioEngine.dampDuration = d
+    setDampState(audioEngine.dampDuration)
   }, [])
 
   const preloadSamples = useCallback((startMidi: number, endMidi: number) => {
@@ -60,5 +66,5 @@ export function useAudio() {
     }
   }, [])
 
-  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode, preloadSamples }
+  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode, preloadSamples, dampDuration, setDampDuration }
 }

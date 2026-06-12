@@ -242,6 +242,8 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
           onStartOctaveChange={setStartOctave}
           soundMode={audio.mode}
           onSoundModeChange={audio.setMode}
+          dampDuration={audio.dampDuration}
+          onDampDurationChange={audio.setDampDuration}
         />
       </div>
 

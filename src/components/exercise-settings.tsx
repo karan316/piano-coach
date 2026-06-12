@@ -11,6 +11,8 @@ interface ExerciseSettingsProps {
   onStartOctaveChange: (o: number) => void
   soundMode: PianoMode
   onSoundModeChange: (m: PianoMode) => void
+  dampDuration: number
+  onDampDurationChange: (d: number) => void
 }
 
 export function ExerciseSettings({
@@ -22,6 +24,8 @@ export function ExerciseSettings({
   onStartOctaveChange,
   soundMode,
   onSoundModeChange,
+  dampDuration,
+  onDampDurationChange,
 }: ExerciseSettingsProps) {
   const [open, setOpen] = useState(false)
 
@@ -102,6 +106,27 @@ export function ExerciseSettings({
                   }`}
                 />
               </button>
+            </div>
+
+            {/* Damp duration */}
+            <div className="mb-3">
+              <label className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                <span>Damping</span>
+                <span className="font-mono text-orange-600 dark:text-orange-400">{dampDuration.toFixed(1)}s</span>
+              </label>
+              <input
+                type="range"
+                min="0.2"
+                max="5"
+                step="0.1"
+                value={dampDuration}
+                onChange={(e) => onDampDurationChange(parseFloat(e.target.value))}
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-orange-500 dark:bg-gray-700"
+              />
+              <div className="mt-0.5 flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
+                <span>Short</span>
+                <span>Long</span>
+              </div>
             </div>
 
             {/* Sound mode */}

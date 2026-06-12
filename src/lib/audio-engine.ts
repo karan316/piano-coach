@@ -20,6 +20,7 @@ class AudioEngine {
   private masterGain: GainNode | null = null
   private activeOscillators = new Map<number, ActiveNote>()
   private _mode: PianoMode = 'grand'
+  private _dampDuration = 2.0 // seconds
 
   // Sample buffer cache: MIDI note → decoded AudioBuffer
   private sampleCache = new Map<number, AudioBuffer>()
@@ -29,6 +30,11 @@ class AudioEngine {
     if (typeof localStorage !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored === 'grand' || stored === 'electric') this._mode = stored
+      const dampStored = localStorage.getItem('piano-coach-damp')
+      if (dampStored) {
+        const parsed = parseFloat(dampStored)
+        if (Number.isFinite(parsed)) this._dampDuration = Math.max(0.1, Math.min(5, parsed))
+      }
     }
   }
 
@@ -40,6 +46,17 @@ class AudioEngine {
     this._mode = m
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, m)
+    }
+  }
+
+  get dampDuration(): number {
+    return this._dampDuration
+  }
+
+  set dampDuration(d: number) {
+    this._dampDuration = Math.max(0.1, Math.min(5, d))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('piano-coach-damp', String(this._dampDuration))
     }
   }
 
@@ -401,9 +418,8 @@ class AudioEngine {
 
     const ctx = this.ensureContext()
     const now = ctx.currentTime
-    // Grand samples: fade out over 2s (damper landing on strings)
-    // Electric synth: fade out over 1.8s (long resonance tail)
-    const release = this._mode === 'grand' ? 2.0 : 1.8
+    // Use custom damp duration for grand, fixed for electric
+    const release = this._mode === 'grand' ? this._dampDuration : 1.8
 
     active.gain.gain.cancelScheduledValues(now)
     active.gain.gain.setValueAtTime(active.gain.gain.value, now)
