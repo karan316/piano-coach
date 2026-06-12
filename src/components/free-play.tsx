@@ -94,7 +94,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
           <span className="hidden sm:inline">Back</span>
         </Button>
 
-        <h1 className="text-sm font-semibold text-foreground">Free Play</h1>
+        <div />
 
         <div className="flex items-center gap-2">
           {/* Sound mode toggle */}
@@ -127,7 +127,8 @@ export function FreePlay({ onBack }: FreePlayProps) {
 
       {/* Staff + Note info area */}
       <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4">
-        <p className="text-sm text-gray-400 dark:text-gray-500">
+        <h2 className="font-display text-3xl text-foreground">Free Play</h2>
+        <p className="text-sm text-muted-foreground">
           Play any key to see it on the staff
         </p>
 

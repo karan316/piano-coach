@@ -13,11 +13,11 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
       },
       {
-        title: 'Piano Coach — Learn Piano with Interactive Exercises',
+        title: 'Piano Coach | Learn Piano with Interactive Exercises',
       },
       {
         name: 'description',
-        content: 'A playful, interactive piano practice app for beginners. Learn notes, read staff, play chords, and train your ear — connect your MIDI piano or use your keyboard.',
+        content: 'A playful, interactive piano practice app for beginners. Learn notes, read staff, play chords, and train your ear. Connect your MIDI piano or use your keyboard.',
       },
       {
         name: 'theme-color',

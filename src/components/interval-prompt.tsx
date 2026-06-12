@@ -74,7 +74,7 @@ export function IntervalPrompt({ prompt, currentStep, phase }: IntervalPromptPro
       )}
 
       {phase === 'incorrect' && (
-        <p className="text-sm text-red-400">Wrong note — try again!</p>
+        <p className="text-sm text-red-400">Wrong note, try again!</p>
       )}
     </div>
   )

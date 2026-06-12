@@ -29,13 +29,17 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
           <ArrowLeft size={16} />
           Back
         </Button>
-        <h1 className="font-display text-xl text-foreground">Practice Stats</h1>
-        {hasData && (
+        <div />
+        {hasData ? (
           <Button variant="destructive" size="xs" onClick={() => { if (confirm('Clear all practice history?')) void clearLog() }}>
             <Trash2 size={12} />
             Clear
           </Button>
-        )}
+        ) : <div />}
+      </div>
+
+      <div className="mb-6 text-center">
+        <h1 className="font-display text-3xl text-foreground">Practice Stats</h1>
       </div>
 
       {!hasData ? (

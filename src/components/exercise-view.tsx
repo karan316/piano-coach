@@ -155,13 +155,36 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
   function renderPrompt() {
     if (game.phase === 'idle') {
       return (
-        <div className="flex flex-col items-center gap-4">
-          <h2 className="font-display text-3xl text-gray-800 dark:text-gray-100">{exercise.name}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{exercise.description}</p>
-            <Button onClick={() => { audio.init(); game.start() }} className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:opacity-90">
-              <Play size={18} />
+        <div className="flex flex-col items-center gap-5">
+          <h2 className="font-display text-3xl text-foreground">{exercise.name}</h2>
+          <p className="text-sm text-muted-foreground">{exercise.description}</p>
+            <button
+              onClick={() => { audio.init(); game.start() }}
+              style={{
+                background: 'linear-gradient(to bottom, #8b5cf6, #7c3aed)',
+                boxShadow: '0 4px 0 #5b21b6',
+                transition: 'transform 60ms ease-out, box-shadow 60ms ease-out',
+              }}
+              onPointerDown={(e) => {
+                const el = e.currentTarget
+                el.style.transform = 'translateY(3px)'
+                el.style.boxShadow = '0 1px 0 #5b21b6'
+              }}
+              onPointerUp={(e) => {
+                const el = e.currentTarget
+                el.style.transform = 'translateY(0)'
+                el.style.boxShadow = '0 4px 0 #5b21b6'
+              }}
+              onPointerLeave={(e) => {
+                const el = e.currentTarget
+                el.style.transform = 'translateY(0)'
+                el.style.boxShadow = '0 4px 0 #5b21b6'
+              }}
+              className="inline-flex items-center gap-2.5 rounded-xl px-8 py-3.5 text-base font-semibold text-white select-none"
+            >
+              <Play size={20} />
               Start Exercise
-            </Button>
+            </button>
         </div>
       )
     }
@@ -226,7 +249,7 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
           <span className="hidden sm:inline">Back</span>
         </Button>
 
-        <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{exercise.name}</h1>
+        <div />
 
         <ExerciseSettings
           octaves={octaves}
@@ -256,7 +279,7 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
       )}
 
       {/* Prompt area */}
-      <div className="flex flex-1 items-center justify-center px-4 py-4">
+      <div className="flex flex-1 items-center justify-center px-4 py-6">
         {renderPrompt()}
       </div>
 

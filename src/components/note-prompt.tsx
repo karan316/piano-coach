@@ -23,7 +23,7 @@ export function NotePrompt({ note, phase }: NotePromptProps) {
         {formatNoteDisplay(note)}
       </div>
       {phase === 'incorrect' && (
-        <p className="animate-note-appear text-sm text-red-400">Try again — keep looking!</p>
+        <p className="animate-note-appear text-sm text-red-400">Try again, keep looking!</p>
       )}
       {phase === 'correct' && (
         <p className="animate-note-appear text-sm text-emerald-500">Correct! ✓</p>

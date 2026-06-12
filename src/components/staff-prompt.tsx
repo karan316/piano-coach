@@ -65,7 +65,7 @@ export function StaffPrompt({ note, noteWithOctave, phase, showNoteName = true }
       )}
 
       {phase === 'incorrect' && (
-        <p className="text-sm text-red-400">Not quite — try again!</p>
+        <p className="text-sm text-red-400">Not quite, try again!</p>
       )}
       {phase === 'correct' && (
         <p className="text-sm text-emerald-500">Perfect! ✓</p>

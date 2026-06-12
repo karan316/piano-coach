@@ -9,12 +9,12 @@ interface ExerciseCardProps {
   onSelect: () => void
 }
 
-const LEVEL_CONFIG: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
-  beginner: { variant: 'secondary', label: 'Beginner' },
-  'beginner+': { variant: 'secondary', label: 'Beginner+' },
-  intermediate: { variant: 'outline', label: 'Intermediate' },
-  'intermediate+': { variant: 'outline', label: 'Intermediate+' },
-  all: { variant: 'secondary', label: 'All Levels' },
+const LEVEL_CONFIG: Record<string, { className: string; label: string }> = {
+  beginner: { className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', label: 'Beginner' },
+  'beginner+': { className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300', label: 'Beginner+' },
+  intermediate: { className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', label: 'Intermediate' },
+  'intermediate+': { className: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300', label: 'Intermediate+' },
+  all: { className: 'bg-gray-100 text-gray-600 dark:bg-gray-800/60 dark:text-gray-400', label: 'All Levels' },
 }
 
 export function ExerciseCard({ id, name, description, level, onSelect }: ExerciseCardProps) {
@@ -35,10 +35,10 @@ export function ExerciseCard({ id, name, description, level, onSelect }: Exercis
       <h3 className="font-display text-lg text-card-foreground">{name}</h3>
 
       {/* Description */}
-      <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
 
       {/* Level badge */}
-      <Badge variant={levelConfig.variant}>
+      <Badge className={`mt-auto ${levelConfig.className}`}>
         {levelConfig.label}
       </Badge>
 

@@ -49,7 +49,7 @@ export function EarTrainingPrompt({ noteWithOctave, phase, onPlaySound, hasListe
 
       {phase === 'incorrect' && (
         <div className="text-center">
-          <p className="text-sm text-red-400">Not quite — listen again and try!</p>
+          <p className="text-sm text-red-400">Not quite, listen again and try!</p>
           <Button variant="destructive" size="sm" onClick={onPlaySound}>
             <Volume2 size={12} />
             Replay

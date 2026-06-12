@@ -10,7 +10,7 @@ const EXTRA_CARDS = [
   {
     id: 'free-play',
     name: 'Free Play',
-    description: 'Explore the keyboard freely — no scoring, just play',
+    description: 'Explore the keyboard freely, no scoring',
     level: 'all' as const,
   },
   {
@@ -28,7 +28,7 @@ export function ExerciseGrid({ onSelectExercise }: ExerciseGridProps) {
       <div className="mb-8 text-center">
         <h2 className="font-display text-3xl text-gray-900 dark:text-gray-100">Choose an Exercise</h2>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Pick a skill to practice — each exercise adapts to your level
+          Pick a skill to practice. Each exercise adapts to your level.
         </p>
       </div>
 
