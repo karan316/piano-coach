@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="15" fill="#7C3AED"/>
+  <g fill="white">
+    <!-- Piano keys simplified -->
+    <rect x="7" y="12" width="4" height="12" rx="1"/>
+    <rect x="12" y="12" width="4" height="12" rx="1"/>
+    <rect x="17" y="12" width="4" height="12" rx="1"/>
+    <rect x="22" y="12" width="4" height="12" rx="1"/>
+    <!-- Black keys -->
+    <rect x="9.5" y="12" width="3" height="7" rx="0.5" fill="#7C3AED"/>
+    <rect x="14.5" y="12" width="3" height="7" rx="0.5" fill="#7C3AED"/>
+    <rect x="21" y="12" width="3" height="7" rx="0.5" fill="#7C3AED"/>
+    <!-- Musical note -->
+    <ellipse cx="13" cy="9" rx="2.5" ry="1.8" fill="white" transform="rotate(-15 13 9)"/>
+    <rect x="15" y="4" width="1.5" height="5.5" rx="0.5" fill="white"/>
+  </g>
+</svg>
