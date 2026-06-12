@@ -29,6 +29,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
   const [startOctave] = useState(() => getStoredSetting('piano-start-octave', 4))
   const [showLabels, setShowLabels] = useState(true)
   const [currentNotes, setCurrentNotes] = useState<number[]>([])
+  const [pointerNotes, setPointerNotes] = useState<Set<number>>(new Set())
 
   const audio = useAudio()
   const midi = useMidi()
@@ -43,7 +44,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
     }
   }, [audio, startOctave, octaves])
 
-  const allActiveNotes = new Set([...midi.activeNotes, ...keyboard.activeKeys])
+  const allActiveNotes = new Set([...midi.activeNotes, ...keyboard.activeKeys, ...pointerNotes])
 
   // Track currently played notes for staff display
   useEffect(() => {
@@ -51,11 +52,12 @@ export function FreePlay({ onBack }: FreePlayProps) {
     if (notes.length > 0) {
       setCurrentNotes(notes)
     }
-  }, [midi.activeNotes, keyboard.activeKeys])
+  }, [midi.activeNotes, keyboard.activeKeys, pointerNotes])
 
   const handleNoteOn = useCallback(
     (midiNote: number) => {
       audio.startNote(midiNote)
+      setPointerNotes((prev) => { const next = new Set(prev); next.add(midiNote); return next })
     },
     [audio],
   )
@@ -63,6 +65,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
   const handleNoteOff = useCallback(
     (midiNote: number) => {
       audio.releaseNote(midiNote)
+      setPointerNotes((prev) => { const next = new Set(prev); next.delete(midiNote); return next })
     },
     [audio],
   )
