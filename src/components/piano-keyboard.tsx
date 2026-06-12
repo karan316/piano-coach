@@ -108,8 +108,8 @@ export function PianoKeyboard({
     }
     if (isActive) {
       return isBlack
-        ? 'bg-amber-500 shadow-amber-400/60 shadow-lg'
-        : 'bg-amber-100 shadow-amber-200/50 shadow-md ring-2 ring-amber-400'
+        ? ''
+        : ''
     }
     return ''
   }
@@ -146,7 +146,7 @@ export function PianoKeyboard({
                 background: highlight
                   ? undefined
                   : isActive
-                    ? 'linear-gradient(to bottom, #fff8ee, #f0e8d8)'
+                    ? 'linear-gradient(to bottom, #fffdf8, #f5f2ec 60%, #ebe8e2)'
                     : 'linear-gradient(to bottom, #ffffff, #f8f8f6 60%, #eae8e3)',
                 boxShadow: isPressed
                   ? 'inset 0 1px 3px rgba(0,0,0,0.15), 0 1px 0 rgba(0,0,0,0.1)'
@@ -191,7 +191,7 @@ export function PianoKeyboard({
                 background: highlight
                   ? undefined
                   : isActive
-                    ? 'linear-gradient(to bottom, #5a4000, #3a2800)'
+                    ? 'linear-gradient(to bottom, #333, #181818 40%, #0a0a0a)'
                     : 'linear-gradient(to bottom, #2a2a2a, #111 40%, #000)',
                 boxShadow: isPressed
                   ? 'none'
