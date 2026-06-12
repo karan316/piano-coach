@@ -8,13 +8,24 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  onValueChange,
   ...props
-}: SliderPrimitive.Root.Props) {
-  const _values = Array.isArray(value)
-    ? value
+}: SliderPrimitive.Root.Props & {
+  onValueChange?: (values: number[]) => void
+}) {
+  // Determine thumb count from value or defaultValue
+  const thumbCount = Array.isArray(value)
+    ? value.length
     : Array.isArray(defaultValue)
-      ? defaultValue
-      : [min, max]
+      ? defaultValue.length
+      : 1
+
+  // Wrap onValueChange to always pass array to consumer
+  const handleChange = onValueChange
+    ? (val: number | number[]) => {
+        onValueChange(Array.isArray(val) ? val : [val])
+      }
+    : undefined
 
   return (
     <SliderPrimitive.Root
@@ -24,7 +35,7 @@ function Slider({
       value={value}
       min={min}
       max={max}
-      thumbAlignment="edge"
+      onValueChange={handleChange}
       {...props}
     >
       <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
@@ -37,7 +48,7 @@ function Slider({
             className="bg-violet-500 select-none data-horizontal:h-full data-vertical:w-full"
           />
         </SliderPrimitive.Track>
-        {Array.from({ length: _values.length }, (_, index) => (
+        {Array.from({ length: thumbCount }, (_, index) => (
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             key={index}
