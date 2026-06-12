@@ -1,4 +1,5 @@
-// OPFS (Origin Private File System) practice log storage with in-memory fallback
+// Practice log storage: OPFS primary, IndexedDB fallback
+// Both are persistent across page reloads. No data loss on refresh.
 
 export interface PracticeEntry {
   timestamp: number
@@ -29,79 +30,163 @@ export interface PracticeStats {
   bestStreak: number
 }
 
-const LOG_FILE_NAME = 'practice_log.json'
+// ─── Storage Backends ──────────────────────────────────────────────
+
+const OPFS_FILE = 'practice_log.json'
+const IDB_NAME = 'piano-coach'
+const IDB_STORE = 'practice-log'
+const IDB_KEY = 'entries'
+
+interface StorageBackend {
+  read: () => Promise<PracticeEntry[]>
+  write: (entries: PracticeEntry[]) => Promise<void>
+}
+
+/** OPFS backend */
+function createOPFSBackend(): StorageBackend | null {
+  if (typeof navigator === 'undefined' || !('storage' in navigator) || !('getDirectory' in navigator.storage)) {
+    return null
+  }
+  return {
+    async read() {
+      const root = await navigator.storage.getDirectory()
+      const handle = await root.getFileHandle(OPFS_FILE, { create: true })
+      const file = await handle.getFile()
+      const text = await file.text()
+      if (!text.trim()) return []
+      const parsed = JSON.parse(text) as unknown
+      return Array.isArray(parsed) ? (parsed as PracticeEntry[]) : []
+    },
+    async write(entries) {
+      const root = await navigator.storage.getDirectory()
+      const handle = await root.getFileHandle(OPFS_FILE, { create: true })
+      const writable = await handle.createWritable()
+      await writable.write(JSON.stringify(entries))
+      await writable.close()
+    },
+  }
+}
+
+/** IndexedDB backend */
+function createIDBBackend(): StorageBackend | null {
+  if (typeof indexedDB === 'undefined') return null
+
+  function openDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(IDB_NAME, 1)
+      request.onupgradeneeded = () => {
+        const db = request.result
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE)
+        }
+      }
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  return {
+    async read() {
+      const db = await openDB()
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly')
+        const store = tx.objectStore(IDB_STORE)
+        const req = store.get(IDB_KEY)
+        req.onsuccess = () => {
+          const result = req.result as unknown
+          resolve(Array.isArray(result) ? (result as PracticeEntry[]) : [])
+        }
+        req.onerror = () => reject(req.error)
+      })
+    },
+    async write(entries) {
+      const db = await openDB()
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite')
+        const store = tx.objectStore(IDB_STORE)
+        const req = store.put(entries, IDB_KEY)
+        req.onsuccess = () => resolve()
+        req.onerror = () => reject(req.error)
+      })
+    },
+  }
+}
+
+// ─── Practice Store ────────────────────────────────────────────────
 
 class PracticeStore {
   private log: PracticeEntry[] = []
   private loaded = false
-  private opfsAvailable: boolean | null = null
+  private backend: StorageBackend | null = null
+  private backendResolved = false
 
-  /** Check if OPFS is available */
-  private async checkOPFS(): Promise<boolean> {
-    if (this.opfsAvailable !== null) return this.opfsAvailable
-    try {
-      if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) {
-        this.opfsAvailable = false
-        return false
+  /** Resolve the best available storage backend (OPFS > IndexedDB) */
+  private async resolveBackend(): Promise<StorageBackend | null> {
+    if (this.backendResolved) return this.backend
+
+    // Try OPFS first
+    const opfs = createOPFSBackend()
+    if (opfs) {
+      try {
+        await opfs.read() // Test that it actually works
+        this.backend = opfs
+        this.backendResolved = true
+        return this.backend
+      } catch {
+        // OPFS failed, fall through to IndexedDB
       }
-      await navigator.storage.getDirectory()
-      this.opfsAvailable = true
-      return true
-    } catch {
-      this.opfsAvailable = false
-      return false
     }
+
+    // Try IndexedDB
+    const idb = createIDBBackend()
+    if (idb) {
+      try {
+        await idb.read() // Test that it actually works
+        this.backend = idb
+        this.backendResolved = true
+        return this.backend
+      } catch {
+        // IndexedDB also failed
+      }
+    }
+
+    // No persistent storage available — in-memory only
+    this.backendResolved = true
+    return null
   }
 
-  /** Load the practice log from OPFS (or initialize empty) */
+  /** Load the practice log from storage */
   async load(): Promise<PracticeEntry[]> {
     if (this.loaded) return this.log
 
-    const hasOPFS = await this.checkOPFS()
-    if (!hasOPFS) {
-      this.loaded = true
-      return this.log
-    }
-
-    try {
-      const root = await navigator.storage.getDirectory()
-      const fileHandle = await root.getFileHandle(LOG_FILE_NAME, { create: true })
-      const file = await fileHandle.getFile()
-      const text = await file.text()
-
-      if (text.trim()) {
-        const parsed = JSON.parse(text) as unknown
-        if (Array.isArray(parsed)) {
-          this.log = parsed as PracticeEntry[]
-        }
+    const backend = await this.resolveBackend()
+    if (backend) {
+      try {
+        this.log = await backend.read()
+      } catch (err) {
+        console.warn('Failed to read practice log:', err)
       }
-    } catch (err) {
-      console.warn('Failed to read practice log from OPFS:', err)
     }
 
     this.loaded = true
     return this.log
   }
 
-  /** Append a new entry and persist to OPFS */
+  /** Append a new entry and persist */
   async appendEntry(entry: PracticeEntry): Promise<void> {
     this.log.push(entry)
     await this.persist()
   }
 
-  /** Write the full log back to OPFS */
+  /** Write the full log to storage */
   private async persist(): Promise<void> {
-    const hasOPFS = await this.checkOPFS()
-    if (!hasOPFS) return
+    const backend = await this.resolveBackend()
+    if (!backend) return
 
     try {
-      const root = await navigator.storage.getDirectory()
-      const fileHandle = await root.getFileHandle(LOG_FILE_NAME, { create: true })
-      const writable = await fileHandle.createWritable()
-      await writable.write(JSON.stringify(this.log))
-      await writable.close()
+      await backend.write(this.log)
     } catch (err) {
-      console.warn('Failed to write practice log to OPFS:', err)
+      console.warn('Failed to write practice log:', err)
     }
   }
 
