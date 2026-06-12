@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { usePostHog } from '@posthog/react'
 import { AppShell } from '#/components/app-shell'
 import { ExerciseGrid } from '#/components/exercise-grid'
 import { ExerciseView } from '#/components/exercise-view'
@@ -10,8 +11,16 @@ export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   const [currentExercise, setCurrentExercise] = useState<string | null>(null)
+  const posthog = usePostHog()
 
   const handleSelectExercise = (id: string) => {
+    if (id === 'free-play') {
+      posthog.capture('free_play_started')
+    } else if (id === 'practice-stats') {
+      posthog.capture('stats_viewed')
+    } else {
+      posthog.capture('exercise_selected', { exercise_id: id })
+    }
     setCurrentExercise(id)
   }
 
@@ -35,9 +44,5 @@ function Home() {
     return <ExerciseView exerciseId={currentExercise} onBack={handleBack} />
   }
 
-  return (
-    <AppShell>
-      {renderContent()}
-    </AppShell>
-  )
+  return <AppShell>{renderContent()}</AppShell>
 }

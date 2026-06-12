@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { ArrowLeft, Play } from 'lucide-react'
+import { usePostHog } from '@posthog/react'
 import { Button } from '#/components/ui/button'
 import { getExercise } from '#/lib/game-logic'
 import { noteNameToMidi, midiToLetter } from '#/lib/notes'
@@ -36,21 +37,43 @@ function getStoredSetting<T>(key: string, fallback: T): T {
 
 export function ExerciseView({ exerciseId, onBack }: ExerciseViewProps) {
   const exercise = getExercise(exerciseId)
-  if (!exercise) return <div className="p-8 text-center text-gray-500">Exercise not found</div>
+  if (!exercise)
+    return (
+      <div className="p-8 text-center text-gray-500">Exercise not found</div>
+    )
 
   return <ExerciseViewInner exercise={exercise} onBack={onBack} />
 }
 
-function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof getExercise> & {}; onBack: () => void }) {
+function ExerciseViewInner({
+  exercise,
+  onBack,
+}: {
+  exercise: ReturnType<typeof getExercise> & {}
+  onBack: () => void
+}) {
   // Settings
-  const [octaves, setOctaves] = useState(() => getStoredSetting('piano-octaves', 2))
-  const [startOctave, setStartOctave] = useState(() => getStoredSetting('piano-start-octave', 4))
-  const [showLabels, setShowLabels] = useState(() => getStoredSetting('piano-labels', false))
+  const [octaves, setOctaves] = useState(() =>
+    getStoredSetting('piano-octaves', 2),
+  )
+  const [startOctave, setStartOctave] = useState(() =>
+    getStoredSetting('piano-start-octave', 4),
+  )
+  const [showLabels, setShowLabels] = useState(() =>
+    getStoredSetting('piano-labels', false),
+  )
+  const posthog = usePostHog()
 
   // Persist settings
-  useEffect(() => { localStorage.setItem('piano-octaves', JSON.stringify(octaves)) }, [octaves])
-  useEffect(() => { localStorage.setItem('piano-start-octave', JSON.stringify(startOctave)) }, [startOctave])
-  useEffect(() => { localStorage.setItem('piano-labels', JSON.stringify(showLabels)) }, [showLabels])
+  useEffect(() => {
+    localStorage.setItem('piano-octaves', JSON.stringify(octaves))
+  }, [octaves])
+  useEffect(() => {
+    localStorage.setItem('piano-start-octave', JSON.stringify(startOctave))
+  }, [startOctave])
+  useEffect(() => {
+    localStorage.setItem('piano-labels', JSON.stringify(showLabels))
+  }, [showLabels])
 
   // Hooks
   const audio = useAudio()
@@ -133,8 +156,13 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
 
   useEffect(() => {
     const unsubOn = keyboard.onNoteOn((note) => midiHandlerRef.current(note))
-    const unsubOff = keyboard.onNoteOff((note) => midiOffHandlerRef.current(note))
-    return () => { unsubOn(); unsubOff() }
+    const unsubOff = keyboard.onNoteOff((note) =>
+      midiOffHandlerRef.current(note),
+    )
+    return () => {
+      unsubOn()
+      unsubOff()
+    }
   }, [keyboard])
 
   // Ear training: play the note
@@ -156,35 +184,47 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
     if (game.phase === 'idle') {
       return (
         <div className="flex flex-col items-center gap-5">
-          <h2 className="font-display text-3xl text-foreground">{exercise.name}</h2>
-          <p className="text-sm text-muted-foreground">{exercise.description}</p>
-            <button
-              onClick={() => { audio.init(); game.start() }}
-              style={{
-                background: 'linear-gradient(to bottom, #8b5cf6, #7c3aed)',
-                boxShadow: '0 4px 0 #5b21b6',
-                transition: 'transform 60ms ease-out, box-shadow 60ms ease-out',
-              }}
-              onPointerDown={(e) => {
-                const el = e.currentTarget
-                el.style.transform = 'translateY(3px)'
-                el.style.boxShadow = '0 1px 0 #5b21b6'
-              }}
-              onPointerUp={(e) => {
-                const el = e.currentTarget
-                el.style.transform = 'translateY(0)'
-                el.style.boxShadow = '0 4px 0 #5b21b6'
-              }}
-              onPointerLeave={(e) => {
-                const el = e.currentTarget
-                el.style.transform = 'translateY(0)'
-                el.style.boxShadow = '0 4px 0 #5b21b6'
-              }}
-              className="inline-flex items-center gap-2.5 rounded-xl px-8 py-3.5 text-base font-semibold text-white select-none"
-            >
-              <Play size={20} />
-              Start Exercise
-            </button>
+          <h2 className="font-display text-3xl text-foreground">
+            {exercise.name}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {exercise.description}
+          </p>
+          <button
+            onClick={() => {
+              audio.init()
+              game.start()
+              posthog.capture('exercise_started', {
+                exercise_id: exercise.id,
+                exercise_type: exercise.type,
+                exercise_level: exercise.level,
+              })
+            }}
+            style={{
+              background: 'linear-gradient(to bottom, #8b5cf6, #7c3aed)',
+              boxShadow: '0 4px 0 #5b21b6',
+              transition: 'transform 60ms ease-out, box-shadow 60ms ease-out',
+            }}
+            onPointerDown={(e) => {
+              const el = e.currentTarget
+              el.style.transform = 'translateY(3px)'
+              el.style.boxShadow = '0 1px 0 #5b21b6'
+            }}
+            onPointerUp={(e) => {
+              const el = e.currentTarget
+              el.style.transform = 'translateY(0)'
+              el.style.boxShadow = '0 4px 0 #5b21b6'
+            }}
+            onPointerLeave={(e) => {
+              const el = e.currentTarget
+              el.style.transform = 'translateY(0)'
+              el.style.boxShadow = '0 4px 0 #5b21b6'
+            }}
+            className="inline-flex items-center gap-2.5 rounded-xl px-8 py-3.5 text-base font-semibold text-white select-none"
+          >
+            <Play size={20} />
+            Start Exercise
+          </button>
         </div>
       )
     }
@@ -296,12 +336,18 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
         />
         {/* Octave indicator */}
         <div className="mt-1.5 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-          <span>C{startOctave}–C{startOctave + octaves}</span>
+          <span>
+            C{startOctave}–C{startOctave + octaves}
+          </span>
           <span className="text-gray-200 dark:text-gray-700">|</span>
           <span>
-            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">Z</kbd>
-            <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">X</kbd>
-            {' '}octave
+            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">
+              Z
+            </kbd>
+            <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">
+              X
+            </kbd>{' '}
+            octave
           </span>
         </div>
       </div>

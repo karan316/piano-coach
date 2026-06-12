@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useRef, useEffect } from 'react'
+import { usePostHog } from '@posthog/react'
 import {
   selectNextNote,
   checkNoteMatch,
@@ -50,15 +51,49 @@ type GameAction =
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START':
-      return { ...state, phase: 'prompting', sessionStartTime: Date.now(), streak: 0, totalCorrect: 0, totalAttempts: 0 }
+      return {
+        ...state,
+        phase: 'prompting',
+        sessionStartTime: Date.now(),
+        streak: 0,
+        totalCorrect: 0,
+        totalAttempts: 0,
+      }
     case 'NEW_PROMPT':
-      return { ...state, phase: 'prompting', currentNote: action.note, currentNoteWithOctave: action.noteWithOctave, feedbackType: null }
+      return {
+        ...state,
+        phase: 'prompting',
+        currentNote: action.note,
+        currentNoteWithOctave: action.noteWithOctave,
+        feedbackType: null,
+      }
     case 'NEW_INTERVAL':
-      return { ...state, phase: 'prompting', intervalPrompt: action.prompt, intervalStep: 0, feedbackType: null, currentNote: action.prompt.note1 }
+      return {
+        ...state,
+        phase: 'prompting',
+        intervalPrompt: action.prompt,
+        intervalStep: 0,
+        feedbackType: null,
+        currentNote: action.prompt.note1,
+      }
     case 'NEW_CHORD':
-      return { ...state, phase: 'prompting', chordNotes: action.notes, chordInfo: action.chord, heldChordNotes: new Set(), feedbackType: null, currentNote: action.notes.join(', ') }
+      return {
+        ...state,
+        phase: 'prompting',
+        chordNotes: action.notes,
+        chordInfo: action.chord,
+        heldChordNotes: new Set(),
+        feedbackType: null,
+        currentNote: action.notes.join(', '),
+      }
     case 'NEW_EAR':
-      return { ...state, phase: 'prompting', currentNoteWithOctave: action.noteWithOctave, currentNote: action.noteWithOctave, feedbackType: null }
+      return {
+        ...state,
+        phase: 'prompting',
+        currentNoteWithOctave: action.noteWithOctave,
+        currentNote: action.noteWithOctave,
+        feedbackType: null,
+      }
     case 'CORRECT':
       return {
         ...state,
@@ -113,21 +148,41 @@ interface UseGameOptions {
   exercise: ExerciseConfig
   stats: PracticeStats | null
   octave: number
-  onCorrect?: (entry: { promptNote: string; playedNote: string; reactionTimeMs: number }) => void
-  onIncorrect?: (entry: { promptNote: string; playedNote: string; reactionTimeMs: number }) => void
+  onCorrect?: (entry: {
+    promptNote: string
+    playedNote: string
+    reactionTimeMs: number
+  }) => void
+  onIncorrect?: (entry: {
+    promptNote: string
+    playedNote: string
+    reactionTimeMs: number
+  }) => void
 }
 
-export function useGame({ exercise, stats, octave, onCorrect, onIncorrect }: UseGameOptions) {
+export function useGame({
+  exercise,
+  stats,
+  octave,
+  onCorrect,
+  onIncorrect,
+}: UseGameOptions) {
   const [state, dispatch] = useReducer(gameReducer, initialState)
   const promptTimeRef = useRef<number>(0)
   const previousNoteRef = useRef<string>('')
+  const posthog = usePostHog()
 
-  const accuracy = state.totalAttempts > 0 ? state.totalCorrect / state.totalAttempts : 0
+  const accuracy =
+    state.totalAttempts > 0 ? state.totalCorrect / state.totalAttempts : 0
 
   // Generate next prompt based on exercise type
   const nextPrompt = useCallback(() => {
     if (exercise.type === 'single') {
-      const note = selectNextNote(exercise.notePool, stats, previousNoteRef.current)
+      const note = selectNextNote(
+        exercise.notePool,
+        stats,
+        previousNoteRef.current,
+      )
       previousNoteRef.current = note
       dispatch({ type: 'NEW_PROMPT', note, noteWithOctave: `${note}${octave}` })
     } else if (exercise.type === 'interval') {
@@ -158,22 +213,39 @@ export function useGame({ exercise, stats, octave, onCorrect, onIncorrect }: Use
       const playedNote = midiToLetter(midi)
 
       if (exercise.type === 'single' || exercise.type === 'ear') {
-        const promptNote = exercise.type === 'ear'
-          ? midiToLetter(noteNameToMidi(state.currentNoteWithOctave))
-          : state.currentNote
+        const promptNote =
+          exercise.type === 'ear'
+            ? midiToLetter(noteNameToMidi(state.currentNoteWithOctave))
+            : state.currentNote
 
         if (checkNoteMatch(midi, promptNote)) {
           dispatch({ type: 'CORRECT', reactionMs })
+          posthog.capture('exercise_answer_correct', {
+            exercise_id: exercise.id,
+            exercise_type: exercise.type,
+            prompt_note: promptNote,
+            played_note: playedNote,
+            reaction_time_ms: reactionMs,
+            streak: state.streak + 1,
+          })
           onCorrect?.({ promptNote, playedNote, reactionTimeMs: reactionMs })
         } else if (state.phase === 'prompting') {
           dispatch({ type: 'INCORRECT' })
+          posthog.capture('exercise_answer_incorrect', {
+            exercise_id: exercise.id,
+            exercise_type: exercise.type,
+            prompt_note: promptNote,
+            played_note: playedNote,
+            reaction_time_ms: reactionMs,
+          })
           onIncorrect?.({ promptNote, playedNote, reactionTimeMs: reactionMs })
         }
       } else if (exercise.type === 'interval') {
         const prompt = state.intervalPrompt
         if (!prompt) return
 
-        const targetNote = state.intervalStep === 0 ? prompt.note1 : prompt.note2
+        const targetNote =
+          state.intervalStep === 0 ? prompt.note1 : prompt.note2
         const targetLetter = midiToLetter(noteNameToMidi(targetNote))
 
         if (checkNoteMatch(midi, targetLetter)) {
@@ -181,15 +253,47 @@ export function useGame({ exercise, stats, octave, onCorrect, onIncorrect }: Use
             dispatch({ type: 'INTERVAL_STEP_DONE' })
           } else {
             dispatch({ type: 'CORRECT', reactionMs })
-            onCorrect?.({ promptNote: `${prompt.note1}-${prompt.note2}`, playedNote, reactionTimeMs: reactionMs })
+            posthog.capture('exercise_answer_correct', {
+              exercise_id: exercise.id,
+              exercise_type: exercise.type,
+              prompt_note: `${prompt.note1}-${prompt.note2}`,
+              played_note: playedNote,
+              reaction_time_ms: reactionMs,
+              streak: state.streak + 1,
+            })
+            onCorrect?.({
+              promptNote: `${prompt.note1}-${prompt.note2}`,
+              playedNote,
+              reactionTimeMs: reactionMs,
+            })
           }
         } else if (state.phase === 'prompting') {
           dispatch({ type: 'INCORRECT' })
-          onIncorrect?.({ promptNote: targetLetter, playedNote, reactionTimeMs: reactionMs })
+          posthog.capture('exercise_answer_incorrect', {
+            exercise_id: exercise.id,
+            exercise_type: exercise.type,
+            prompt_note: targetLetter,
+            played_note: playedNote,
+            reaction_time_ms: reactionMs,
+          })
+          onIncorrect?.({
+            promptNote: targetLetter,
+            playedNote,
+            reactionTimeMs: reactionMs,
+          })
         }
       }
     },
-    [state.phase, state.currentNote, state.currentNoteWithOctave, state.intervalPrompt, state.intervalStep, exercise, onCorrect, onIncorrect],
+    [
+      state.phase,
+      state.currentNote,
+      state.currentNoteWithOctave,
+      state.intervalPrompt,
+      state.intervalStep,
+      exercise,
+      onCorrect,
+      onIncorrect,
+    ],
   )
 
   // Handle chord: track held notes
@@ -205,10 +309,28 @@ export function useGame({ exercise, stats, octave, onCorrect, onIncorrect }: Use
 
       if (checkChordMatch([...newHeld], state.chordNotes)) {
         dispatch({ type: 'CORRECT', reactionMs })
-        onCorrect?.({ promptNote: state.chordNotes.join('+'), playedNote: 'chord', reactionTimeMs: reactionMs })
+        posthog.capture('exercise_answer_correct', {
+          exercise_id: exercise.id,
+          exercise_type: exercise.type,
+          prompt_note: state.chordNotes.join('+'),
+          played_note: 'chord',
+          reaction_time_ms: reactionMs,
+          streak: state.streak + 1,
+        })
+        onCorrect?.({
+          promptNote: state.chordNotes.join('+'),
+          playedNote: 'chord',
+          reactionTimeMs: reactionMs,
+        })
       }
     },
-    [exercise.type, state.phase, state.heldChordNotes, state.chordNotes, onCorrect],
+    [
+      exercise.type,
+      state.phase,
+      state.heldChordNotes,
+      state.chordNotes,
+      onCorrect,
+    ],
   )
 
   const handleChordNoteOff = useCallback(

@@ -1,4 +1,5 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { PostHogProvider } from '@posthog/react'
 
 import appCss from '../styles.css?url'
 
@@ -10,14 +11,16 @@ export const Route = createRootRoute({
       },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+        content:
+          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
       },
       {
         title: 'Piano Coach | Learn Piano with Interactive Exercises',
       },
       {
         name: 'description',
-        content: 'A playful, interactive piano practice app for beginners. Learn notes, read staff, play chords, and train your ear. Connect your MIDI piano or use your keyboard.',
+        content:
+          'A playful, interactive piano practice app for beginners. Learn notes, read staff, play chords, and train your ear. Connect your MIDI piano or use your keyboard.',
       },
       {
         name: 'theme-color',
@@ -59,7 +62,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="overscroll-none">
-        {children}
+        <PostHogProvider
+          apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN!}
+          options={{
+            api_host: '/ingest',
+            ui_host:
+              import.meta.env.VITE_PUBLIC_POSTHOG_HOST ||
+              'https://us.posthog.com',
+            defaults: '2025-05-24',
+            capture_exceptions: true,
+            debug: import.meta.env.DEV,
+          }}
+        >
+          {children}
+        </PostHogProvider>
         <Scripts />
       </body>
     </html>

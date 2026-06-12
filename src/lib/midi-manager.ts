@@ -1,4 +1,5 @@
 // Web MIDI API manager — handles connection, event parsing, and note tracking
+import posthog from 'posthog-js'
 
 export type MidiNoteHandler = (note: number, velocity: number) => void
 
@@ -53,10 +54,14 @@ class MidiManager {
 
     // Log all available ports for debugging
     for (const input of this.access.inputs.values()) {
-      console.log(`MIDI Input: "${input.name}" [${input.manufacturer}] state=${input.state}`)
+      console.log(
+        `MIDI Input: "${input.name}" [${input.manufacturer}] state=${input.state}`,
+      )
     }
     for (const output of this.access.outputs.values()) {
-      console.log(`MIDI Output: "${output.name}" [${output.manufacturer}] state=${output.state}`)
+      console.log(
+        `MIDI Output: "${output.name}" [${output.manufacturer}] state=${output.state}`,
+      )
     }
 
     // Find first available input, prefer real devices over virtual ports
@@ -65,13 +70,21 @@ class MidiManager {
       if (input.state === 'connected') {
         // Skip virtual/internal ports if a real device might be available
         const name = (input.name ?? '').toLowerCase()
-        if (name.includes('midiweb') || name.includes('virtual') || name.includes('internal')) {
+        if (
+          name.includes('midiweb') ||
+          name.includes('virtual') ||
+          name.includes('internal')
+        ) {
           if (!fallbackInput) fallbackInput = input
           continue
         }
         this.input = input
         this.input.onmidimessage = this.handleMessage
         this.updateState(true, input.name ?? 'MIDI Device')
+        posthog.capture('midi_device_connected', {
+          device_name: input.name ?? 'MIDI Device',
+          device_type: 'hardware',
+        })
         return
       }
     }
@@ -81,6 +94,10 @@ class MidiManager {
       this.input = fallbackInput
       this.input.onmidimessage = this.handleMessage
       this.updateState(true, fallbackInput.name ?? 'MIDI Device')
+      posthog.capture('midi_device_connected', {
+        device_name: fallbackInput.name ?? 'MIDI Device',
+        device_type: 'virtual',
+      })
       return
     }
 

@@ -1,4 +1,5 @@
 import { ArrowLeft, Trash2 } from 'lucide-react'
+import { usePostHog } from '@posthog/react'
 import { Button } from '#/components/ui/button'
 import { usePracticeLog } from '#/hooks/use-practice-log'
 import { formatNoteDisplay } from '#/lib/notes'
@@ -9,11 +10,14 @@ interface StatsPanelProps {
 
 export function StatsPanel({ onBack }: StatsPanelProps) {
   const { stats, isLoading, getLog, clearLog } = usePracticeLog()
+  const posthog = usePostHog()
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-gray-400 dark:text-gray-500">Loading practice data…</p>
+        <p className="text-gray-400 dark:text-gray-500">
+          Loading practice data…
+        </p>
       </div>
     )
   }
@@ -31,42 +35,80 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
         </Button>
         <div />
         {hasData ? (
-          <Button variant="destructive" size="xs" onClick={() => { if (confirm('Clear all practice history?')) void clearLog() }}>
+          <Button
+            variant="destructive"
+            size="xs"
+            onClick={() => {
+              if (confirm('Clear all practice history?')) {
+                posthog.capture('practice_data_cleared', {
+                  total_attempts: stats?.totalAttempts ?? 0,
+                })
+                void clearLog()
+              }
+            }}
+          >
             <Trash2 size={12} />
             Clear
           </Button>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
       </div>
 
       <div className="mb-6 text-center">
-        <h1 className="font-display text-3xl text-foreground">Practice Stats</h1>
+        <h1 className="font-display text-3xl text-foreground">
+          Practice Stats
+        </h1>
       </div>
 
       {!hasData ? (
         <div className="py-16 text-center">
           <p className="text-4xl">🎵</p>
-          <p className="mt-4 text-gray-500 dark:text-gray-400">No practice data yet!</p>
-          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Start an exercise to track your progress.</p>
+          <p className="mt-4 text-gray-500 dark:text-gray-400">
+            No practice data yet!
+          </p>
+          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+            Start an exercise to track your progress.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Overview cards */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Total Notes" value={stats?.totalAttempts.toString() ?? '0'} />
-            <StatCard label="Accuracy" value={stats ? `${Math.round(stats.accuracy * 100)}%` : '—'} />
-            <StatCard label="Avg Reaction" value={stats ? `${(stats.avgReactionMs / 1000).toFixed(1)}s` : '—'} />
-            <StatCard label="Best Streak" value={stats?.bestStreak.toString() ?? '0'} />
+            <StatCard
+              label="Total Notes"
+              value={stats?.totalAttempts.toString() ?? '0'}
+            />
+            <StatCard
+              label="Accuracy"
+              value={stats ? `${Math.round(stats.accuracy * 100)}%` : '—'}
+            />
+            <StatCard
+              label="Avg Reaction"
+              value={
+                stats ? `${(stats.avgReactionMs / 1000).toFixed(1)}s` : '—'
+              }
+            />
+            <StatCard
+              label="Best Streak"
+              value={stats?.bestStreak.toString() ?? '0'}
+            />
           </div>
 
           {/* Per-note accuracy breakdown */}
           {stats && stats.byNote.length > 0 && (
             <div>
-              <h3 className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">Note Accuracy</h3>
+              <h3 className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                Note Accuracy
+              </h3>
               <div className="space-y-2">
                 {stats.byNote
                   .sort((a, b) => a.accuracy - b.accuracy)
                   .map((noteStat) => (
-                    <div key={noteStat.note} className="flex items-center gap-3">
+                    <div
+                      key={noteStat.note}
+                      className="flex items-center gap-3"
+                    >
                       <span className="w-10 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
                         {formatNoteDisplay(noteStat.note)}
                       </span>
@@ -80,7 +122,9 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
                                   ? 'bg-amber-400'
                                   : 'bg-red-400'
                             }`}
-                            style={{ width: `${Math.round(noteStat.accuracy * 100)}%` }}
+                            style={{
+                              width: `${Math.round(noteStat.accuracy * 100)}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -121,10 +165,15 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
           {/* Per-exercise breakdown */}
           {stats && Object.keys(stats.byExercise).length > 0 && (
             <div>
-              <h3 className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">By Exercise</h3>
+              <h3 className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                By Exercise
+              </h3>
               <div className="space-y-2">
                 {Object.entries(stats.byExercise).map(([id, data]) => (
-                  <div key={id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-[#1A1525]/60">
+                  <div
+                    key={id}
+                    className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-[#1A1525]/60"
+                  >
                     <span className="text-sm font-medium text-gray-700 capitalize dark:text-gray-300">
                       {id.replace(/-/g, ' ')}
                     </span>
@@ -146,8 +195,12 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-gray-50 p-3 text-center dark:bg-[#1A1525]/60">
-      <div className="font-display text-2xl text-gray-800 dark:text-gray-100">{value}</div>
-      <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{label}</div>
+      <div className="font-display text-2xl text-gray-800 dark:text-gray-100">
+        {value}
+      </div>
+      <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+        {label}
+      </div>
     </div>
   )
 }
