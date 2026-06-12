@@ -155,7 +155,7 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
     if (game.phase === 'idle') {
       return (
         <div className="flex flex-col items-center gap-4">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{exercise.name}</h2>
+          <h2 className="font-display text-3xl text-gray-800 dark:text-gray-100">{exercise.name}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{exercise.description}</p>
           <button
             onClick={() => { audio.init(); game.start() }}

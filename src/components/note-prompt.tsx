@@ -12,7 +12,7 @@ export function NotePrompt({ note, phase }: NotePromptProps) {
         Find this note
       </p>
       <div
-        className={`animate-note-appear text-6xl font-bold transition-colors sm:text-7xl ${
+        className={`animate-note-appear font-display text-7xl transition-colors sm:text-8xl ${
           phase === 'correct'
             ? 'text-emerald-500'
             : phase === 'incorrect'

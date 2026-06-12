@@ -31,7 +31,7 @@ export function ExerciseCard({ id, name, description, level, onSelect }: Exercis
       </div>
 
       {/* Name */}
-      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{name}</h3>
+      <h3 className="font-display text-lg text-gray-900 dark:text-gray-100">{name}</h3>
 
       {/* Description */}
       <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">{description}</p>

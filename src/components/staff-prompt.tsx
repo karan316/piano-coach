@@ -44,7 +44,7 @@ export function StaffPrompt({ note, noteWithOctave, phase, showNoteName = true }
       {/* Note name below (always shown for non-staff-reader, or when hint is revealed) */}
       {shouldShowName ? (
         <div
-          className={`text-3xl font-bold transition-colors ${
+          className={`font-display text-4xl transition-colors ${
             phase === 'correct'
               ? 'text-emerald-500'
               : phase === 'incorrect'

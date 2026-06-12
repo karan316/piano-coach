@@ -21,7 +21,7 @@ export function AppShell({ children }: AppShellProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 text-white">
             <Music size={16} />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-gray-800 dark:text-gray-100">
+          <h1 className="font-display text-xl tracking-tight text-gray-800 dark:text-gray-100">
             Piano Coach
           </h1>
           <span className="text-xs text-gray-300 dark:text-gray-600">♪</span>

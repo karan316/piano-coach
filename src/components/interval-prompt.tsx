@@ -20,7 +20,7 @@ export function IntervalPrompt({ prompt, currentStep, phase }: IntervalPromptPro
         {/* First note */}
         <div className="flex flex-col items-center gap-2">
           <div
-            className={`flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-bold transition-all sm:h-24 sm:w-24 sm:text-4xl ${
+            className={`flex h-20 w-20 items-center justify-center rounded-2xl font-display text-3xl transition-all sm:h-24 sm:w-24 sm:text-4xl ${
               currentStep === 0
                 ? phase === 'incorrect'
                   ? 'bg-red-50 text-red-500 ring-2 ring-red-300 dark:bg-red-900/20'
@@ -39,7 +39,7 @@ export function IntervalPrompt({ prompt, currentStep, phase }: IntervalPromptPro
         {/* Second note */}
         <div className="flex flex-col items-center gap-2">
           <div
-            className={`flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-bold transition-all sm:h-24 sm:w-24 sm:text-4xl ${
+            className={`flex h-20 w-20 items-center justify-center rounded-2xl font-display text-3xl transition-all sm:h-24 sm:w-24 sm:text-4xl ${
               currentStep === 1
                 ? phase === 'correct'
                   ? 'bg-emerald-50 text-emerald-500 ring-2 ring-emerald-300 dark:bg-emerald-900/20'
@@ -64,7 +64,7 @@ export function IntervalPrompt({ prompt, currentStep, phase }: IntervalPromptPro
       {/* Interval name shown after completion */}
       {phase === 'correct' && (
         <div className="animate-note-appear text-center">
-          <p className="text-lg font-semibold text-emerald-500">
+          <p className="font-display text-lg text-emerald-500">
             That's a {prompt.intervalName}! ✓
           </p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

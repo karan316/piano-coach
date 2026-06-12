@@ -156,7 +156,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
           <div className="flex gap-3">
             {noteInfos.map((info, i) => (
               <div key={i} className="text-center">
-                <span className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+                <span className="font-display text-3xl text-gray-800 dark:text-gray-100">
                   {info.name.replace('#', '♯').replace('b', '♭')}
                 </span>
                 <p className="mt-1 text-xs text-gray-400">

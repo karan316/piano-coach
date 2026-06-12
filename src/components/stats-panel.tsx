@@ -31,7 +31,7 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
           <ArrowLeft size={16} />
           Back
         </button>
-        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">Practice Stats</h1>
+        <h1 className="font-display text-xl text-gray-800 dark:text-gray-100">Practice Stats</h1>
         {hasData && (
           <button
             onClick={() => { if (confirm('Clear all practice history?')) void clearLog() }}
@@ -147,7 +147,7 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-gray-50 p-3 text-center dark:bg-gray-800/60">
-      <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</div>
+      <div className="font-display text-2xl text-gray-800 dark:text-gray-100">{value}</div>
       <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{label}</div>
     </div>
   )

@@ -43,7 +43,7 @@ export function EarTrainingPrompt({ noteWithOctave, phase, onPlaySound, hasListe
 
       {phase === 'correct' && (
         <div className="animate-note-appear text-center">
-          <p className="text-lg font-semibold text-emerald-500">
+          <p className="font-display text-lg text-emerald-500">
             Correct! That was {formatNoteDisplay(noteLetter)} ✓
           </p>
         </div>

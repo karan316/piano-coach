@@ -20,7 +20,7 @@ export function ChordPrompt({ notes, chordInfo, heldCount, phase }: ChordPromptP
         {notes.map((note, i) => (
           <div
             key={i}
-            className={`flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold transition-all sm:h-20 sm:w-20 sm:text-3xl ${
+            className={`flex h-16 w-16 items-center justify-center rounded-xl font-display text-2xl transition-all sm:h-20 sm:w-20 sm:text-3xl ${
               i < heldCount
                 ? 'bg-emerald-50 text-emerald-500 ring-2 ring-emerald-300 dark:bg-emerald-900/20'
                 : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700'
@@ -47,7 +47,7 @@ export function ChordPrompt({ notes, chordInfo, heldCount, phase }: ChordPromptP
       {phase === 'correct' && chordInfo && (
         <div className="animate-note-appear w-full max-w-md rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 text-center shadow-lg dark:border-emerald-800 dark:from-emerald-900/30 dark:to-teal-900/30">
           <div className="mb-2 text-3xl">🎉</div>
-          <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
+          <h3 className="font-display text-xl text-emerald-700 dark:text-emerald-300">
             {chordInfo.name}!
           </h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">

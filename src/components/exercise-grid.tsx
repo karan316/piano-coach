@@ -26,7 +26,7 @@ export function ExerciseGrid({ onSelectExercise }: ExerciseGridProps) {
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Section heading */}
       <div className="mb-8 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Choose an Exercise</h2>
+        <h2 className="font-display text-3xl text-gray-900 dark:text-gray-100">Choose an Exercise</h2>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
           Pick a skill to practice — each exercise adapts to your level
         </p>
