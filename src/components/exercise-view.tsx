@@ -281,7 +281,7 @@ function ExerciseViewInner({
         if (!q) return null
 
         // For ear exercises, add a play button
-        const isEarExercise = exercise.id === 'ear-interval' || exercise.id === 'ear-chord'
+        const isEarExercise = exercise.id === 'ear-interval' || exercise.id === 'ear-chord' || exercise.id === 'ear-scale'
 
         return (
           <MultipleChoicePrompt

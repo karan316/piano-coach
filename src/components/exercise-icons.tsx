@@ -188,6 +188,7 @@ export const EXERCISE_ICON_MAP: Record<string, React.ComponentType<IconProps>> =
   'ear-training': EarTrainingIcon,
   'ear-interval': EarTrainingIcon, // reuse ear icon
   'ear-chord': EarTrainingIcon, // reuse ear icon
+  'ear-scale': EarTrainingIcon, // reuse ear icon
   'rhythm-training': NoteFinderIcon, // reuse note icon
   'free-play': FreePlayIcon,
   'practice-stats': StatsIcon,

@@ -1,17 +1,16 @@
 // Exercise configs, adaptive note selection, chord detection, scoring
 
+import type { NoteLetter } from './notes';
 import {
-  type NoteLetter,
-  WHITE_KEYS,
-  ALL_NOTES_SHARP,
-  ALL_NOTES_FLAT,
-  INTERVAL_NAMES,
-  noteNameToMidi,
-  midiToLetter,
-  midiToNoteName,
-} from './notes'
-import { getRandomKeySignature, getKeySignatureDistractors } from './scales'
-import type { PracticeStats } from './practice-store'
+    ALL_NOTES_SHARP,
+    INTERVAL_NAMES,
+    midiToLetter,
+    midiToNoteName,
+    noteNameToMidi,
+    WHITE_KEYS
+} from './notes';
+import type { PracticeStats } from './practice-store';
+import { getKeySignatureDistractors, getRandomKeySignature } from './scales';
 
 // ─── Exercise Definitions ─────────────────────────────────────────────
 
@@ -155,6 +154,16 @@ export const EXERCISES: ExerciseConfig[] = [
     id: 'ear-chord',
     name: 'Chord by Ear',
     description: 'Identify chord types by listening',
+    level: 'intermediate+',
+    notePool: [...WHITE_KEYS],
+    showStaff: false,
+    type: 'multiple-choice',
+    category: 'ear',
+  },
+  {
+    id: 'ear-scale',
+    name: 'Scale by Ear',
+    description: 'Identify scales by listening',
     level: 'intermediate+',
     notePool: [...WHITE_KEYS],
     showStaff: false,
@@ -548,6 +557,28 @@ export function generateMultipleChoice(exerciseId: string, octave: number, numOc
         correctAnswer: quality,
         playNotes: chordMidis,
         playSimultaneous: true,
+      }
+    }
+
+    case 'ear-scale': {
+      const roots: NoteLetter[] = ['C', 'D', 'E', 'F', 'G', 'A']
+      const root = roots[Math.floor(Math.random() * roots.length)]
+      const rootMidi = noteNameToMidi(`${root}${octave}`)
+      const isMajor = Math.random() > 0.4
+      const intervals = isMajor ? [0, 2, 4, 5, 7, 9, 11, 12] : [0, 2, 3, 5, 7, 8, 10, 12]
+      const scaleMidis = intervals.map((i) => rootMidi + i)
+      const quality = isMajor ? 'Major' : 'Natural Minor'
+      const correctName = `${root} ${quality}`
+      const scaleRoots: NoteLetter[] = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+      const allScales = scaleRoots.flatMap((r) => [`${r} Major`, `${r} Natural Minor`])
+      const distractors = shuffle(allScales.filter((s) => s !== correctName)).slice(0, 3)
+      return {
+        id: exerciseId,
+        prompt: 'What scale do you hear?',
+        choices: shuffle([correctName, ...distractors]),
+        correctAnswer: correctName,
+        playNotes: scaleMidis,
+        playSimultaneous: false, // play ascending
       }
     }
 
