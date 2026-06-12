@@ -1,5 +1,6 @@
 import { Volume2, RotateCcw } from 'lucide-react'
 import { formatNoteDisplay, noteNameToMidi, midiToLetter } from '#/lib/notes'
+import { Button } from '#/components/ui/button'
 
 interface EarTrainingPromptProps {
   noteWithOctave: string // e.g. "E4"
@@ -32,13 +33,10 @@ export function EarTrainingPrompt({ noteWithOctave, phase, onPlaySound, hasListe
 
       {/* Replay hint */}
       {hasListened && phase === 'prompting' && (
-        <button
-          onClick={onPlaySound}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 dark:bg-[#1A1525] dark:text-gray-400 dark:hover:bg-gray-700"
-        >
+        <Button variant="ghost" size="sm" onClick={onPlaySound}>
           <RotateCcw size={12} />
           Listen again
-        </button>
+        </Button>
       )}
 
       {phase === 'correct' && (
@@ -52,13 +50,10 @@ export function EarTrainingPrompt({ noteWithOctave, phase, onPlaySound, hasListe
       {phase === 'incorrect' && (
         <div className="text-center">
           <p className="text-sm text-red-400">Not quite — listen again and try!</p>
-          <button
-            onClick={onPlaySound}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-500 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40"
-          >
+          <Button variant="destructive" size="sm" onClick={onPlaySound}>
             <Volume2 size={12} />
             Replay
-          </button>
+          </Button>
         </div>
       )}
     </div>

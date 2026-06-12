@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { noteNameToMidi, formatNoteDisplay } from '#/lib/notes'
 import { StaffDisplay } from './staff-display'
 import { Eye } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 
 interface StaffPromptProps {
   note: string // e.g. "E" — note letter without octave
@@ -57,13 +58,10 @@ export function StaffPrompt({ note, noteWithOctave, phase, showNoteName = true }
           {formatNoteDisplay(note)}
         </div>
       ) : (
-        <button
-          onClick={() => setHintRevealed(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-violet-50 hover:text-violet-600 dark:bg-[#1A1525] dark:text-gray-400 dark:hover:bg-violet-900/20 dark:hover:text-violet-400"
-        >
+        <Button variant="ghost" size="sm" onClick={() => setHintRevealed(true)}>
           <Eye size={14} />
           Show hint
-        </button>
+        </Button>
       )}
 
       {phase === 'incorrect' && (

@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { Sun, Moon } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 
 interface ThemeToggleProps {
   isDark: boolean
@@ -57,11 +58,13 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
   }
 
   return (
-    <button
+    <Button
       ref={buttonRef}
+      variant="ghost"
+      size="icon"
       onClick={handleToggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="relative rounded-full bg-gray-100 p-2 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-[#1A1525] dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+      className="rounded-full"
     >
       <div className="relative h-[18px] w-[18px]">
         <Sun
@@ -81,6 +84,6 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
           }`}
         />
       </div>
-    </button>
+    </Button>
   )
 }

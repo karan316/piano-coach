@@ -6,6 +6,8 @@ import { useKeyboardInput } from '#/hooks/use-keyboard-input'
 import { PianoKeyboard } from './piano-keyboard'
 import { StaffDisplay } from './staff-display'
 import { ArrowLeft } from 'lucide-react'
+import { Button } from '#/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '#/components/ui/toggle-group'
 
 interface FreePlayProps {
   onBack: () => void
@@ -87,52 +89,39 @@ export function FreePlay({ onBack }: FreePlayProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
+        <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft size={16} />
           <span className="hidden sm:inline">Back</span>
-        </button>
+        </Button>
 
-        <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Free Play</h1>
+        <h1 className="text-sm font-semibold text-foreground">Free Play</h1>
 
         <div className="flex items-center gap-2">
           {/* Sound mode toggle */}
-          <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-[#1A1525]">
-            <button
-              onClick={() => audio.setMode('grand')}
-              className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-                audio.mode === 'grand'
-                  ? 'bg-white text-violet-700 shadow-sm dark:bg-[#241E35] dark:text-violet-300'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-              }`}
-            >
+          <ToggleGroup
+            type="single"
+            value={[audio.mode]}
+            onValueChange={(v) => { if (v.length) audio.setMode(v[0] as 'grand' | 'electric') }}
+            variant="outline"
+            size="sm"
+            spacing={0}
+          >
+            <ToggleGroupItem value="grand" className="text-[10px]">
               🎹 Grand
-            </button>
-            <button
-              onClick={() => audio.setMode('electric')}
-              className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-                audio.mode === 'electric'
-                  ? 'bg-white text-violet-700 shadow-sm dark:bg-[#241E35] dark:text-violet-300'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-              }`}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem value="electric" className="text-[10px]">
               ⚡ Electric
-            </button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
 
           {/* Labels toggle */}
-          <button
+          <Button
+            variant={showLabels ? 'secondary' : 'ghost'}
+            size="xs"
             onClick={() => setShowLabels(!showLabels)}
-            className={`rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
-              showLabels
-                ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                : 'bg-gray-100 text-gray-500 dark:bg-[#1A1525] dark:text-gray-400'
-            }`}
           >
             {showLabels ? 'Labels On' : 'Labels Off'}
-          </button>
+          </Button>
         </div>
       </div>
 

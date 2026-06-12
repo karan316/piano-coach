@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { ArrowLeft, Play } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 import { getExercise } from '#/lib/game-logic'
 import { noteNameToMidi, midiToLetter } from '#/lib/notes'
 import { useGame } from '#/hooks/use-game'
@@ -157,13 +158,10 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
         <div className="flex flex-col items-center gap-4">
           <h2 className="font-display text-3xl text-gray-800 dark:text-gray-100">{exercise.name}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{exercise.description}</p>
-          <button
-            onClick={() => { audio.init(); game.start() }}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
-          >
-            <Play size={18} />
-            Start Exercise
-          </button>
+            <Button onClick={() => { audio.init(); game.start() }} className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:opacity-90">
+              <Play size={18} />
+              Start Exercise
+            </Button>
         </div>
       )
     }
@@ -223,13 +221,10 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
+        <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft size={16} />
           <span className="hidden sm:inline">Back</span>
-        </button>
+        </Button>
 
         <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{exercise.name}</h1>
 

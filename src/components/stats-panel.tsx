@@ -1,4 +1,5 @@
 import { ArrowLeft, Trash2 } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 import { usePracticeLog } from '#/hooks/use-practice-log'
 import { formatNoteDisplay } from '#/lib/notes'
 
@@ -24,22 +25,16 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
     <div className="mx-auto max-w-3xl px-4 py-4">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
+        <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft size={16} />
           Back
-        </button>
-        <h1 className="font-display text-xl text-gray-800 dark:text-gray-100">Practice Stats</h1>
+        </Button>
+        <h1 className="font-display text-xl text-foreground">Practice Stats</h1>
         {hasData && (
-          <button
-            onClick={() => { if (confirm('Clear all practice history?')) void clearLog() }}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-          >
+          <Button variant="destructive" size="xs" onClick={() => { if (confirm('Clear all practice history?')) void clearLog() }}>
             <Trash2 size={12} />
             Clear
-          </button>
+          </Button>
         )}
       </div>
 
