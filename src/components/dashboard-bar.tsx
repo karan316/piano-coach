@@ -24,7 +24,7 @@ export function DashboardBar({ streak, accuracy, lastReactionMs, sessionStartTim
   const seconds = elapsed % 60
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 rounded-xl bg-gray-50 px-4 py-2 text-sm dark:bg-gray-800/60 sm:gap-5">
+    <div className="flex flex-wrap items-center justify-center gap-3 rounded-xl bg-gray-50 px-4 py-2 text-sm dark:bg-[#1A1525]/60 sm:gap-5">
       {/* Streak */}
       <div className="flex items-center gap-1.5">
         <Flame size={16} className={streak > 0 ? 'text-orange-500' : 'text-gray-400 dark:text-gray-500'} />

@@ -13,7 +13,7 @@ const LEVEL_STYLES: Record<string, { bg: string; text: string; label: string }> 
   'beginner+': { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300', label: 'Beginner+' },
   intermediate: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-300', label: 'Intermediate' },
   'intermediate+': { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-700 dark:text-purple-300', label: 'Intermediate+' },
-  all: { bg: 'bg-gray-100 dark:bg-gray-800/60', text: 'text-gray-600 dark:text-gray-400', label: 'All Levels' },
+  all: { bg: 'bg-gray-100 dark:bg-[#1A1525]/60', text: 'text-gray-600 dark:text-gray-400', label: 'All Levels' },
 }
 
 export function ExerciseCard({ id, name, description, level, onSelect }: ExerciseCardProps) {
@@ -23,10 +23,10 @@ export function ExerciseCard({ id, name, description, level, onSelect }: Exercis
   return (
     <button
       onClick={onSelect}
-      className="group relative flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-md dark:border-gray-700/50 dark:bg-gray-800/80 dark:hover:border-gray-600 dark:hover:bg-gray-800"
+      className="group relative flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:shadow-md dark:border-purple-800/30 dark:bg-[#1A1525] dark:hover:border-purple-700/40 dark:hover:bg-[#1E1830]"
     >
       {/* Icon */}
-      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 text-orange-500 transition-colors group-hover:from-orange-100 group-hover:to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 dark:text-orange-400 dark:group-hover:from-orange-900/50 dark:group-hover:to-amber-900/50">
+      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 text-violet-500 transition-colors group-hover:from-violet-100 group-hover:to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 dark:text-violet-400 dark:group-hover:from-violet-900/50 dark:group-hover:to-purple-900/50">
         {IconComponent && <IconComponent size={40} />}
       </div>
 

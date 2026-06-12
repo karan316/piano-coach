@@ -23,7 +23,7 @@ export function ChordPrompt({ notes, chordInfo, heldCount, phase }: ChordPromptP
             className={`flex h-16 w-16 items-center justify-center rounded-xl font-display text-2xl transition-all sm:h-20 sm:w-20 sm:text-3xl ${
               i < heldCount
                 ? 'bg-emerald-50 text-emerald-500 ring-2 ring-emerald-300 dark:bg-emerald-900/20'
-                : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700'
+                : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 dark:bg-[#1A1525] dark:text-gray-200 dark:ring-gray-700'
             }`}
           >
             {formatNoteDisplay(note)}

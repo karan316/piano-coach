@@ -58,7 +58,7 @@ export function ExerciseGrid({ onSelectExercise }: ExerciseGridProps) {
 
       {/* Keyboard hint */}
       <div className="mt-8 text-center">
-        <p className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        <p className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-xs text-gray-500 dark:bg-[#1A1525] dark:text-gray-400">
           <span className="font-mono">A S D F G H J K</span>
           <span>= Piano keys</span>
           <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>

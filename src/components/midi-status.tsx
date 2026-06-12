@@ -9,7 +9,7 @@ interface MidiStatusProps {
 export function MidiStatus({ isConnected, deviceName, isSupported }: MidiStatusProps) {
   if (!isSupported) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs dark:bg-gray-800">
+      <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs dark:bg-[#1A1525]">
         <Keyboard size={14} className="text-gray-400" />
         <span className="text-gray-500 dark:text-gray-400">Use keys A-K</span>
       </div>
@@ -30,7 +30,7 @@ export function MidiStatus({ isConnected, deviceName, isSupported }: MidiStatusP
   }
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs dark:bg-gray-800">
+    <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs dark:bg-[#1A1525]">
       <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
       <Piano size={14} className="text-gray-400" />
       <span className="text-gray-500 dark:text-gray-400">No Piano</span>

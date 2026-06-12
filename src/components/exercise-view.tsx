@@ -159,7 +159,7 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
           <p className="text-sm text-gray-500 dark:text-gray-400">{exercise.description}</p>
           <button
             onClick={() => { audio.init(); game.start() }}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
           >
             <Play size={18} />
             Start Exercise
@@ -281,8 +281,8 @@ function ExerciseViewInner({ exercise, onBack }: { exercise: ReturnType<typeof g
           <span>C{startOctave}–C{startOctave + octaves}</span>
           <span className="text-gray-200 dark:text-gray-700">|</span>
           <span>
-            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-gray-800">Z</kbd>
-            <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-gray-800">X</kbd>
+            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">Z</kbd>
+            <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-[#1A1525]">X</kbd>
             {' '}octave
           </span>
         </div>

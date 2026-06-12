@@ -46,7 +46,7 @@ export function IntervalPrompt({ prompt, currentStep, phase }: IntervalPromptPro
                   : phase === 'incorrect'
                     ? 'bg-red-50 text-red-500 ring-2 ring-red-300 dark:bg-red-900/20'
                     : 'bg-blue-50 text-blue-600 ring-2 ring-blue-300 dark:bg-blue-900/20 dark:text-blue-400'
-                : 'bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                : 'bg-gray-50 text-gray-400 dark:bg-[#1A1525] dark:text-gray-500'
             }`}
           >
             {formatNoteDisplay(prompt.note2)}

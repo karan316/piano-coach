@@ -50,7 +50,7 @@ export function StaffPrompt({ note, noteWithOctave, phase, showNoteName = true }
               : phase === 'incorrect'
                 ? 'text-red-400'
                 : hintRevealed
-                  ? 'text-amber-500 dark:text-amber-400'
+                  ? 'text-violet-500 dark:text-violet-400'
                   : 'text-gray-800 dark:text-gray-100'
           }`}
         >
@@ -59,7 +59,7 @@ export function StaffPrompt({ note, noteWithOctave, phase, showNoteName = true }
       ) : (
         <button
           onClick={() => setHintRevealed(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-violet-50 hover:text-violet-600 dark:bg-[#1A1525] dark:text-gray-400 dark:hover:bg-violet-900/20 dark:hover:text-violet-400"
         >
           <Eye size={14} />
           Show hint

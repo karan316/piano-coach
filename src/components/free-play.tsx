@@ -99,12 +99,12 @@ export function FreePlay({ onBack }: FreePlayProps) {
 
         <div className="flex items-center gap-2">
           {/* Sound mode toggle */}
-          <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800">
+          <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-[#1A1525]">
             <button
               onClick={() => audio.setMode('grand')}
               className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
                 audio.mode === 'grand'
-                  ? 'bg-white text-orange-700 shadow-sm dark:bg-gray-700 dark:text-orange-300'
+                  ? 'bg-white text-violet-700 shadow-sm dark:bg-[#241E35] dark:text-violet-300'
                   : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
@@ -114,7 +114,7 @@ export function FreePlay({ onBack }: FreePlayProps) {
               onClick={() => audio.setMode('electric')}
               className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
                 audio.mode === 'electric'
-                  ? 'bg-white text-orange-700 shadow-sm dark:bg-gray-700 dark:text-orange-300'
+                  ? 'bg-white text-violet-700 shadow-sm dark:bg-[#241E35] dark:text-violet-300'
                   : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
@@ -127,8 +127,8 @@ export function FreePlay({ onBack }: FreePlayProps) {
             onClick={() => setShowLabels(!showLabels)}
             className={`rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
               showLabels
-                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-[#1A1525] dark:text-gray-400'
             }`}
           >
             {showLabels ? 'Labels On' : 'Labels Off'}

@@ -72,7 +72,7 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
                         {formatNoteDisplay(noteStat.note)}
                       </span>
                       <div className="flex-1">
-                        <div className="h-4 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                        <div className="h-4 overflow-hidden rounded-full bg-gray-100 dark:bg-[#1A1525]">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               noteStat.accuracy >= 0.8
@@ -125,7 +125,7 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
               <h3 className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">By Exercise</h3>
               <div className="space-y-2">
                 {Object.entries(stats.byExercise).map(([id, data]) => (
-                  <div key={id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/60">
+                  <div key={id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-[#1A1525]/60">
                     <span className="text-sm font-medium text-gray-700 capitalize dark:text-gray-300">
                       {id.replace(/-/g, ' ')}
                     </span>
@@ -146,7 +146,7 @@ export function StatsPanel({ onBack }: StatsPanelProps) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 p-3 text-center dark:bg-gray-800/60">
+    <div className="rounded-xl bg-gray-50 p-3 text-center dark:bg-[#1A1525]/60">
       <div className="font-display text-2xl text-gray-800 dark:text-gray-100">{value}</div>
       <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{label}</div>
     </div>

@@ -28,17 +28,17 @@ body {
   --color-bg: #FAF8F5;
   --color-surface: #FFFFFF;
   --color-text: #2D2319;
-  --color-accent: #E8734A;
-  --color-accent-2: #4F46E5;
+  --color-accent: #7C3AED;
+  --color-accent-2: #6D28D9;
   color-scheme: light;
 }
 
 .dark {
-  --color-bg: #0F1729;
-  --color-surface: #1A2332;
+  --color-bg: #110E1B;
+  --color-surface: #1A1525;
   --color-text: #F5F0E8;
-  --color-accent: #F59E0B;
-  --color-accent-2: #14B8A6;
+  --color-accent: #A78BFA;
+  --color-accent-2: #8B5CF6;
   color-scheme: dark;
 }
 

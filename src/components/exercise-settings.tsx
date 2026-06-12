@@ -33,7 +33,7 @@ export function ExerciseSettings({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+        className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 dark:bg-[#1A1525] dark:text-gray-400 dark:hover:bg-gray-700"
       >
         <Settings size={14} />
         <span className="hidden sm:inline">Settings</span>
@@ -46,7 +46,7 @@ export function ExerciseSettings({
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
 
           {/* Popover */}
-          <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+          <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-purple-800/30 dark:bg-[#1A1525]">
             <h4 className="mb-3 text-xs font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
               Piano Settings
             </h4>
@@ -61,8 +61,8 @@ export function ExerciseSettings({
                     onClick={() => onOctavesChange(n)}
                     className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors ${
                       octaves === n
-                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
+                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-[#241E35] dark:text-gray-400 dark:hover:bg-gray-600'
                     }`}
                   >
                     {n}
@@ -81,8 +81,8 @@ export function ExerciseSettings({
                     onClick={() => onStartOctaveChange(o)}
                     className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors ${
                       startOctave === o
-                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
+                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-[#241E35] dark:text-gray-400 dark:hover:bg-gray-600'
                     }`}
                   >
                     C{o}
@@ -97,7 +97,7 @@ export function ExerciseSettings({
               <button
                 onClick={() => onShowLabelsChange(!showLabels)}
                 className={`relative h-5 w-9 rounded-full transition-colors ${
-                  showLabels ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                  showLabels ? 'bg-violet-500' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               >
                 <span
@@ -112,7 +112,7 @@ export function ExerciseSettings({
             <div className="mb-3">
               <label className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
                 <span>Damping</span>
-                <span className="font-mono text-orange-600 dark:text-orange-400">{dampDuration.toFixed(1)}s</span>
+                <span className="font-mono text-violet-600 dark:text-violet-400">{dampDuration.toFixed(1)}s</span>
               </label>
               <input
                 type="range"
@@ -121,7 +121,7 @@ export function ExerciseSettings({
                 step="0.1"
                 value={dampDuration}
                 onChange={(e) => onDampDurationChange(parseFloat(e.target.value))}
-                className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-orange-500 dark:bg-gray-700"
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-violet-500 dark:bg-[#241E35]"
               />
               <div className="mt-0.5 flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
                 <span>Short</span>
@@ -139,8 +139,8 @@ export function ExerciseSettings({
                     onClick={() => onSoundModeChange(mode)}
                     className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors ${
                       soundMode === mode
-                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
+                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-[#241E35] dark:text-gray-400 dark:hover:bg-gray-600'
                     }`}
                   >
                     {label}
