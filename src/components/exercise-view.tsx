@@ -1,27 +1,28 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { ArrowLeft, Play, Volume2 } from 'lucide-react'
-import { usePostHog } from '@posthog/react'
-import { Button } from '#/components/ui/button'
-import { getExercise } from '#/lib/game-logic'
-import { noteNameToMidi, midiToLetter } from '#/lib/notes'
-import { useGame } from '#/hooks/use-game'
-import { useAudio } from '#/hooks/use-audio'
-import { useMidi } from '#/hooks/use-midi'
-import { useKeyboardInput } from '#/hooks/use-keyboard-input'
-import { usePracticeLog } from '#/hooks/use-practice-log'
-import { PianoKeyboard } from './piano-keyboard'
-import { DashboardBar } from './dashboard-bar'
-import { ExerciseSettings } from './exercise-settings'
-import { FeedbackOverlay } from './feedback-overlay'
-import { NotePrompt } from './note-prompt'
-import { StaffPrompt } from './staff-prompt'
-import { IntervalPrompt } from './interval-prompt'
-import { ChordPrompt } from './chord-prompt'
-import { ScalePrompt } from './scale-prompt'
-import { EarTrainingPrompt } from './ear-training-prompt'
-import { MultipleChoicePrompt } from './multiple-choice-prompt'
-import { RhythmPrompt } from './rhythm-prompt'
-import { KeySignatureDisplay } from './key-signature-display'
+import { Button } from '#/components/ui/button';
+import { useAudio } from '#/hooks/use-audio';
+import { useGame } from '#/hooks/use-game';
+import { useKeyboardInput } from '#/hooks/use-keyboard-input';
+import { useMidi } from '#/hooks/use-midi';
+import { usePracticeLog } from '#/hooks/use-practice-log';
+import { getExercise } from '#/lib/game-logic';
+import { noteNameToMidi } from '#/lib/notes';
+import { usePostHog } from '@posthog/react';
+import { ArrowLeft, Play, Volume2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChordPrompt } from './chord-prompt';
+import { DashboardBar } from './dashboard-bar';
+import { EarTrainingPrompt } from './ear-training-prompt';
+import { ExerciseSettings } from './exercise-settings';
+import { FeedbackOverlay } from './feedback-overlay';
+import { IntervalPrompt } from './interval-prompt';
+import { KeySignatureDisplay } from './key-signature-display';
+import { MultipleChoicePrompt } from './multiple-choice-prompt';
+import { NotePrompt } from './note-prompt';
+import { PianoKeyboard } from './piano-keyboard';
+import { RhythmPrompt } from './rhythm-prompt';
+import { ScalePrompt } from './scale-prompt';
+import { StaffPrompt } from './staff-prompt';
+import { TipCard } from './tip-card';
 
 interface ExerciseViewProps {
   exerciseId: string
@@ -197,6 +198,9 @@ function ExerciseViewInner({
           <p className="text-sm text-muted-foreground">
             {exercise.description}
           </p>
+
+          {/* Beginner lesson tip */}
+          <TipCard exerciseId={exercise.id} />
           <button
             onClick={() => {
               audio.init()
