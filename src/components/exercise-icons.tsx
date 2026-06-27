@@ -173,6 +173,25 @@ export function StatsIcon({ className, size = 64 }: IconProps) {
   )
 }
 
+/** Falling notes / play — Song Player */
+export function SongIcon({ className, size = 64 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
+      {/* Falling note blocks */}
+      <rect x="14" y="10" width="8" height="20" rx="2" fill="currentColor" opacity="0.8" />
+      <rect x="28" y="18" width="8" height="16" rx="2" fill="currentColor" opacity="0.55" />
+      <rect x="42" y="8" width="8" height="26" rx="2" fill="currentColor" opacity="0.7" />
+      {/* Hit line */}
+      <line x1="8" y1="40" x2="56" y2="40" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+      {/* Keys */}
+      <rect x="10" y="44" width="44" height="12" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+      <line x1="21" y1="44" x2="21" y2="56" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+      <line x1="32" y1="44" x2="32" y2="56" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+      <line x1="43" y1="44" x2="43" y2="56" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+    </svg>
+  )
+}
+
 /** Map exercise IDs to their icon components */
 export const EXERCISE_ICON_MAP: Record<string, React.ComponentType<IconProps>> = {
   'note-finder': NoteFinderIcon,
@@ -193,4 +212,5 @@ export const EXERCISE_ICON_MAP: Record<string, React.ComponentType<IconProps>> =
   'rhythm-training': NoteFinderIcon, // reuse note icon
   'free-play': FreePlayIcon,
   'practice-stats': StatsIcon,
+  'song-library': SongIcon,
 }

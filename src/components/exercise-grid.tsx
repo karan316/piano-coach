@@ -64,6 +64,20 @@ export function ExerciseGrid({ onSelectExercise }: ExerciseGridProps) {
 
       {/* Tools section */}
       <div className="mb-6">
+        <h3 className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Songs</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <ExerciseCard
+            id="song-library"
+            name="Song Player"
+            description="Practice full songs with a piano roll or sheet music"
+            level="all"
+            onSelect={() => onSelectExercise('song-library')}
+          />
+        </div>
+      </div>
+
+      {/* Tools section */}
+      <div className="mb-6">
         <h3 className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Tools</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {EXTRA_CARDS.map((card) => (

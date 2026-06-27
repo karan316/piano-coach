@@ -6,6 +6,7 @@ import { ExerciseGrid } from '#/components/exercise-grid'
 import { ExerciseView } from '#/components/exercise-view'
 import { FreePlay } from '#/components/free-play'
 import { StatsPanel } from '#/components/stats-panel'
+import { SongLibrary } from '#/components/song-library'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -18,6 +19,8 @@ function Home() {
       posthog.capture('free_play_started')
     } else if (id === 'practice-stats') {
       posthog.capture('stats_viewed')
+    } else if (id === 'song-library') {
+      posthog.capture('song_library_opened')
     } else {
       posthog.capture('exercise_selected', { exercise_id: id })
     }
@@ -39,6 +42,10 @@ function Home() {
 
     if (currentExercise === 'practice-stats') {
       return <StatsPanel onBack={handleBack} />
+    }
+
+    if (currentExercise === 'song-library') {
+      return <SongLibrary onBack={handleBack} />
     }
 
     return <ExerciseView exerciseId={currentExercise} onBack={handleBack} />
