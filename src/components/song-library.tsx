@@ -1,10 +1,9 @@
-import { useState } from 'react'
 import { ArrowLeft, Music4 } from 'lucide-react'
 import { Button } from '#/components/ui/button'
-import { SONG_PIECES, type Difficulty, type Song } from '#/lib/songs'
-import { SongPlayer } from './song-player'
+import { SONG_PIECES, type Difficulty } from '#/lib/songs'
 
 interface SongLibraryProps {
+  onSelectSong: (songId: string) => void
   onBack: () => void
 }
 
@@ -16,13 +15,7 @@ const DIFF_STYLE: Record<Difficulty, string> = {
   hard: 'border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/30',
 }
 
-export function SongLibrary({ onBack }: SongLibraryProps) {
-  const [selected, setSelected] = useState<Song | null>(null)
-
-  if (selected) {
-    return <SongPlayer song={selected} onBack={() => setSelected(null)} />
-  }
-
+export function SongLibrary({ onSelectSong, onBack }: SongLibraryProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -65,7 +58,7 @@ export function SongLibrary({ onBack }: SongLibraryProps) {
                 {DIFFICULTIES.map((diff) => (
                   <button
                     key={diff}
-                    onClick={() => setSelected(piece.variants[diff])}
+                    onClick={() => onSelectSong(piece.variants[diff].id)}
                     className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors ${DIFF_STYLE[diff]}`}
                   >
                     {diff}
