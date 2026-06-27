@@ -6,7 +6,13 @@ export function useAudio() {
   const [isReady, setIsReady] = useState(false)
   const [mode, setModeState] = useState<PianoMode>(audioEngine.mode)
   const [dampDuration, setDampState] = useState(audioEngine.dampDuration)
+  const [outputEnabled, setOutputEnabledState] = useState(audioEngine.outputEnabled)
   const initialized = useRef(false)
+
+  // Keep local state in sync with the engine (it can change from MIDI auto-mute)
+  useEffect(() => {
+    return audioEngine.onOutputChange(() => setOutputEnabledState(audioEngine.outputEnabled))
+  }, [])
 
   // Initialize on first user interaction
   const init = useCallback(() => {
@@ -29,6 +35,10 @@ export function useAudio() {
   const setDampDuration = useCallback((d: number) => {
     audioEngine.dampDuration = d
     setDampState(audioEngine.dampDuration)
+  }, [])
+
+  const setOutputEnabled = useCallback((v: boolean) => {
+    audioEngine.outputEnabled = v
   }, [])
 
   const preloadSamples = useCallback((startMidi: number, endMidi: number) => {
@@ -66,5 +76,5 @@ export function useAudio() {
     }
   }, [])
 
-  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode, preloadSamples, dampDuration, setDampDuration }
+  return { playNote, startNote, releaseNote, playChime, playBuzz, isReady, init, mode, setMode, preloadSamples, dampDuration, setDampDuration, outputEnabled, setOutputEnabled }
 }

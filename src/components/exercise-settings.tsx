@@ -17,6 +17,8 @@ interface ExerciseSettingsProps {
   onSoundModeChange: (m: PianoMode) => void
   dampDuration: number
   onDampDurationChange: (d: number) => void
+  outputEnabled: boolean
+  onOutputEnabledChange: (v: boolean) => void
 }
 
 export function ExerciseSettings({
@@ -30,6 +32,8 @@ export function ExerciseSettings({
   onSoundModeChange,
   dampDuration,
   onDampDurationChange,
+  outputEnabled,
+  onOutputEnabledChange,
 }: ExerciseSettingsProps) {
   return (
     <Popover>
@@ -95,6 +99,17 @@ export function ExerciseSettings({
             onCheckedChange={onShowLabelsChange}
             size="sm"
           />
+        </div>
+
+        {/* Virtual piano sound output */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-muted-foreground">Virtual Piano Sound</label>
+            <Switch checked={outputEnabled} onCheckedChange={onOutputEnabledChange} size="sm" />
+          </div>
+          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            Turns off automatically when a hardware keyboard is connected.
+          </p>
         </div>
 
         {/* Damp duration */}

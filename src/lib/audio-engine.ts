@@ -21,6 +21,11 @@ class AudioEngine {
   private activeOscillators = new Map<number, ActiveNote>()
   private _mode: PianoMode = 'grand'
   private _dampDuration = 2.0 // seconds
+  // When false, the app stops producing key-press sound (e.g. so a connected
+  // hardware keyboard's own sound is heard instead). Song auto-playback,
+  // ear-training tones, and feedback chimes are unaffected.
+  private _outputEnabled = true
+  private outputListeners = new Set<() => void>()
 
   // Sample buffer cache: MIDI note → decoded AudioBuffer
   private sampleCache = new Map<number, AudioBuffer>()
@@ -57,6 +62,30 @@ class AudioEngine {
     this._dampDuration = Math.max(0.1, Math.min(5, d))
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('piano-coach-damp', String(this._dampDuration))
+    }
+  }
+
+  /** Whether the app produces sound when (virtual or hardware) keys are played. */
+  get outputEnabled(): boolean {
+    return this._outputEnabled
+  }
+
+  set outputEnabled(v: boolean) {
+    if (this._outputEnabled === v) return
+    this._outputEnabled = v
+    if (!v) this.stopAllNotes()
+    for (const cb of this.outputListeners) cb()
+  }
+
+  /** Subscribe to output-enabled changes (returns an unsubscribe fn). */
+  onOutputChange(cb: () => void): () => void {
+    this.outputListeners.add(cb)
+    return () => this.outputListeners.delete(cb)
+  }
+
+  private stopAllNotes(): void {
+    for (const midi of [...this.activeOscillators.keys()]) {
+      this.releaseNote(midi)
     }
   }
 
@@ -403,6 +432,7 @@ class AudioEngine {
 
   /** Start a sustained note (for key-down), call releaseNote to stop */
   startNote(midi: number): void {
+    if (!this._outputEnabled) return
     this.releaseNote(midi)
     if (this._mode === 'grand') {
       this.startGrandNote(midi)

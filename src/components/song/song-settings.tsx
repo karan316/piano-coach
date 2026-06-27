@@ -3,6 +3,7 @@ import type { PianoMode } from '#/lib/audio-engine'
 import { Button } from '#/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover'
 import { Slider } from '#/components/ui/slider'
+import { Switch } from '#/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '#/components/ui/toggle-group'
 
 interface SongSettingsProps {
@@ -10,6 +11,8 @@ interface SongSettingsProps {
   onSoundModeChange: (m: PianoMode) => void
   dampDuration: number
   onDampDurationChange: (d: number) => void
+  outputEnabled: boolean
+  onOutputEnabledChange: (v: boolean) => void
 }
 
 export function SongSettings({
@@ -17,6 +20,8 @@ export function SongSettings({
   onSoundModeChange,
   dampDuration,
   onDampDurationChange,
+  outputEnabled,
+  onOutputEnabledChange,
 }: SongSettingsProps) {
   return (
     <Popover>
@@ -33,6 +38,17 @@ export function SongSettings({
         <h4 className="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           Playback Settings
         </h4>
+
+        {/* Virtual piano sound output */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-muted-foreground">Virtual Piano Sound</label>
+            <Switch checked={outputEnabled} onCheckedChange={onOutputEnabledChange} size="sm" />
+          </div>
+          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            Turns off automatically when a hardware keyboard is connected.
+          </p>
+        </div>
 
         {/* Damp duration — how long notes ring */}
         <div className="mb-3">

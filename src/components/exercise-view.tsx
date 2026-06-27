@@ -392,6 +392,8 @@ function ExerciseViewInner({
           onSoundModeChange={audio.setMode}
           dampDuration={audio.dampDuration}
           onDampDurationChange={audio.setDampDuration}
+          outputEnabled={audio.outputEnabled}
+          onOutputEnabledChange={audio.setOutputEnabled}
         />
       </div>
 

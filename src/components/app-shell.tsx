@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Music } from 'lucide-react'
 import { useTheme } from '#/hooks/use-theme'
 import { useMidi } from '#/hooks/use-midi'
+import { audioEngine } from '#/lib/audio-engine'
 import { MidiStatus } from './midi-status'
 import { ThemeToggle } from './theme-toggle'
 
@@ -11,6 +13,13 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { isDark, toggleTheme } = useTheme()
   const midi = useMidi()
+
+  // When a hardware keyboard connects, mute the app's key-press sound so the
+  // keyboard's own sound is heard; restore it when disconnected. The user can
+  // still override this manually in settings (until the next connection change).
+  useEffect(() => {
+    audioEngine.outputEnabled = !midi.isConnected
+  }, [midi.isConnected])
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF8F5] text-gray-900 transition-colors dark:bg-[#110E1B] dark:text-gray-100">

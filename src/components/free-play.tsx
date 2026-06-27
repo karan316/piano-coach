@@ -125,6 +125,16 @@ export function FreePlay({ onBack }: FreePlayProps) {
           >
             {showLabels ? 'Labels On' : 'Labels Off'}
           </Button>
+
+          {/* Virtual piano sound toggle (auto-off with a hardware keyboard) */}
+          <Button
+            variant={audio.outputEnabled ? 'secondary' : 'ghost'}
+            size="xs"
+            onClick={() => audio.setOutputEnabled(!audio.outputEnabled)}
+            title="Turns off automatically when a hardware keyboard is connected"
+          >
+            {audio.outputEnabled ? '🔊 Sound' : '🔇 Muted'}
+          </Button>
         </div>
       </div>
 
